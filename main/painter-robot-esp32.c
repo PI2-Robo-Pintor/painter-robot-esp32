@@ -6,33 +6,52 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
 #include "protocol_examples_common.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
 
-#include "lwip/sockets.h"
+#include "driver/gpio.h"
+
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
+#include "lwip/sockets.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-static const char *TAG = "MQTTWS_EXAMPLE";
+static const char* TAG = "PI2-Robo-Pintor";
 
-static void log_error_if_nonzero(const char *message, int error_code)
-{
+#define HIGH 1
+#define LOW  0
+
+#define BUILTIN_LED GPIO_NUM_2
+static uint8_t s_led_state = 0;
+
+static void blink_led(void) {
+    /* Set the GPIO level according to the state (LOW or HIGH)*/
+    gpio_set_level(BUILTIN_LED, s_led_state);
+}
+
+static void configure_led(void) {
+    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
+    gpio_reset_pin(BUILTIN_LED);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(BUILTIN_LED, GPIO_MODE_OUTPUT);
+}
+
+static void log_error_if_nonzero(const char* message, int error_code) {
     if (error_code != 0) {
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
@@ -48,11 +67,11 @@ static void log_error_if_nonzero(const char *message, int error_code)
  * @param event_id The id for the received event.
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
-{
+static void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data) {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32, base, event_id);
-    esp_mqtt_event_handle_t event = event_data;
+    esp_mqtt_event_handle_t event   = event_data;
     esp_mqtt_client_handle_t client = event->client;
+
     int msg_id;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -91,13 +110,28 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
+
+        char command = event->data[0];
+        switch (command) {
+        case 'a':
+            printf("comando a\n");
+            gpio_set_level(BUILTIN_LED, HIGH);
+            break;
+        case 'b':
+            printf("comando b\n");
+            gpio_set_level(BUILTIN_LED, LOW);
+            break;
+        default:
+            printf("comando não reconhecido\n");
+            break;
+        }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
-            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->esp_transport_sock_errno);
+            log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
             ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
         }
         break;
@@ -109,7 +143,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 static void mqtt_app_start(void) {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "ws://test.mosquitto.org",
+        .broker.address.uri  = "ws://test.mosquitto.org",
         .broker.address.port = 8080,
         // .broker.address.uri = "ws://172.16.1.215",
         // .broker.address.port = 1883,
@@ -123,8 +157,9 @@ static void mqtt_app_start(void) {
     esp_mqtt_client_start(client);
 }
 
-void app_main(void)
-{
+void app_main(void) {
+    configure_led();
+
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
