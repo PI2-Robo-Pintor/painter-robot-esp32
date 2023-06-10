@@ -1,11 +1,10 @@
 ---
 Language:        Cpp
 # BasedOnStyle:  LLVM
-AccessModifierOffset: -2
+AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: false
-# Só no Clang v9+
 AlignConsecutiveMacros: true
 AlignEscapedNewlines: Right
 AlignOperands:   true
