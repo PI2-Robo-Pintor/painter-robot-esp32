@@ -6,6 +6,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+
+// #include "queue.h"
+extern QueueHandle_t qqueue;
 #include "tag.h"
 
 #define HIGH 1

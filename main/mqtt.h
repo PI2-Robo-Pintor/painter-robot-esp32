@@ -8,6 +8,8 @@
 #include "freertos/task.h"
 #include "mqtt_client.h"
 
+// #include "queue.h"
+extern QueueHandle_t qqueue;
 #include "tag.h"
 
 #define HIGH 1

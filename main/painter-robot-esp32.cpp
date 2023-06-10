@@ -1,11 +1,3 @@
-/* MQTT over Websockets Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_system.h"
@@ -33,6 +25,7 @@
 
 #include "StepMotor.h"
 #include "mqtt.h"
+#include "queue.h"
 #include "tag.h"
 
 extern "C" void app_main(void) {
@@ -58,15 +51,17 @@ extern "C" void app_main(void) {
     ESP_ERROR_CHECK(example_connect());
 
     Mqtt mqtt;
-
     StepMotor motor;
-    QueueHandle_t queue = xQueueCreate(10, sizeof(unsigned char));
-    if (!queue)
+
+    qqueue = xQueueCreate(10, sizeof(unsigned char));
+    if (!qqueue)
         ESP_LOGE(TAG, "Failed to create Queue");
     else {
-        ESP_LOGI(TAG, "<<< Addr queue %p", &queue);
-        motor.queue = queue;
-        mqtt.queue  = queue;
+        ESP_LOGI(TAG, "      Queue %p", qqueue);
+        motor.queue = qqueue;
+        mqtt.queue  = qqueue;
+        ESP_LOGI(TAG, "motor.queue %p", motor.queue);
+        ESP_LOGI(TAG, "mqtt .queue %p", motor.queue);
     }
 
     mqtt_app_start(&mqtt);
@@ -75,8 +70,8 @@ extern "C" void app_main(void) {
     xTaskCreate(
         step_motor_control_loop,
         "Task de controle do motor",
-        1024 * 4,
+        2048,
         &motor,
-        tskIDLE_PRIORITY,
+        1,
         NULL);
 }

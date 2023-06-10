@@ -231,9 +231,16 @@ void step_motor_control_loop(void* args) {
     char command = 0;
     while (true) {
         // ESP_LOGI(TAG, "verifica se tem mensagem em Queue...");
-        // if (xQueueReceive(motor->queue, &command, 10) == pdPASS) {
-        //     ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
-        // }
+        // if (xQueueReceive(motor->queue, &command, (TickType_t)10) == pdPASS) {
+        if (xQueueReceive(qqueue, &command, (TickType_t)10) == pdPASS) {
+            ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
+
+            if (command == 'a') {
+                gpio_set_level(GPIO_NUM_2, HIGH);
+            } else {
+                gpio_set_level(GPIO_NUM_2, LOW);
+            }
+        }
         ESP_LOGI(TAG, "step motor control iteration | motor %p %d", motor, motor->oi);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

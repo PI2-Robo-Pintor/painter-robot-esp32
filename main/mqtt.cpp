@@ -15,8 +15,6 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
     int msg_id;
     char command = 0;
 
-    ESP_LOGI(TAG, "<<< mqtt.queue %p", &mqtt->queue);
-
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
@@ -56,9 +54,11 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
         printf("DATA=%.*s\r\n", event->data_len, event->data);
 
         command = event->data[0];
-        ESP_LOGI(TAG, "QQQ About to send to Queue");
+        ESP_LOGI(TAG, "motor.queue %p", mqtt->queue);
+        ESP_LOGI(TAG, "QQQ About to send to Queue %p", mqtt->queue);
         if (mqtt->queue != NULL) {
-            if (xQueueSend(mqtt->queue, &command, (TickType_t)10) == pdPASS) {
+            // if (xQueueSend(mqtt->queue, &command, (TickType_t)0) == pdPASS) {
+            if (xQueueSend(qqueue, &command, (TickType_t)0) == pdPASS) {
                 ESP_LOGI(TAG, "MQTT mensagem enviada p/ Queue");
             } else
                 ESP_LOGW(TAG, "FALHA MQTT mensagem NÂO enviada p/ Queue");
