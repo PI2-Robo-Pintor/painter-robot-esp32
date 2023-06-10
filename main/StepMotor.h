@@ -8,7 +8,7 @@
 #include "freertos/task.h"
 
 // #include "queue.h"
-extern QueueHandle_t qqueue;
+extern QueueHandle_t stepMotorQueue;
 #include "tag.h"
 
 #define HIGH 1

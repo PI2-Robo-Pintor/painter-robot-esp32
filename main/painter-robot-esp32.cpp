@@ -53,13 +53,12 @@ extern "C" void app_main(void) {
     Mqtt mqtt;
     StepMotor motor;
 
-    qqueue = xQueueCreate(10, sizeof(unsigned char));
-    if (!qqueue)
+    stepMotorQueue = xQueueCreate(10, sizeof(unsigned char));
+    if (!stepMotorQueue)
         ESP_LOGE(TAG, "Failed to create Queue");
     else {
-        ESP_LOGI(TAG, "      Queue %p", qqueue);
-        motor.queue = qqueue;
-        mqtt.queue  = qqueue;
+        ESP_LOGI(TAG, "      Queue %p", stepMotorQueue);
+        motor.queue = stepMotorQueue;
         ESP_LOGI(TAG, "motor.queue %p", motor.queue);
         ESP_LOGI(TAG, "mqtt .queue %p", motor.queue);
     }

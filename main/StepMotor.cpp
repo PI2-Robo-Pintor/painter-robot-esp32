@@ -232,7 +232,7 @@ void step_motor_control_loop(void* args) {
     while (true) {
         // ESP_LOGI(TAG, "verifica se tem mensagem em Queue...");
         // if (xQueueReceive(motor->queue, &command, (TickType_t)10) == pdPASS) {
-        if (xQueueReceive(qqueue, &command, (TickType_t)10) == pdPASS) {
+        if (xQueueReceive(stepMotorQueue, &command, (TickType_t)10) == pdPASS) {
             ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
 
             if (command == 'a') {

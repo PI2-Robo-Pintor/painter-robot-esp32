@@ -58,7 +58,7 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
         ESP_LOGI(TAG, "QQQ About to send to Queue %p", mqtt->queue);
         if (mqtt->queue != NULL) {
             // if (xQueueSend(mqtt->queue, &command, (TickType_t)0) == pdPASS) {
-            if (xQueueSend(qqueue, &command, (TickType_t)0) == pdPASS) {
+            if (xQueueSend(stepMotorQueue, &command, (TickType_t)0) == pdPASS) {
                 ESP_LOGI(TAG, "MQTT mensagem enviada p/ Queue");
             } else
                 ESP_LOGW(TAG, "FALHA MQTT mensagem NÂO enviada p/ Queue");

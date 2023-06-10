@@ -4,8 +4,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-QueueHandle_t StepMotorQueue;
+QueueHandle_t stepMotorQueue;
 
-QueueHandle_t SensorsQueue;
+QueueHandle_t sensorsQueue;
 
 #endif // QUEUE_H_INCLUDED
