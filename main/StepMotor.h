@@ -4,17 +4,9 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 #include "tag.h"
-
-#define RST 8
-#define SLP 9
-#define ENA 7
-#define MS1 4
-#define MS2 5
-#define MS3 6
-#define DIR 3
-#define STP 2
 
 #define HIGH 1
 #define LOW  0
@@ -36,6 +28,8 @@ public:
     void microStep16();
     void testMotor();
     void printRpm();
+    int oi;
+    QueueHandle_t queue;
 
 private:
     // Definiçoes das Portas Digitais do Arduino
@@ -56,5 +50,7 @@ private:
     int voltas = 3;         // voltas do motor
     float RPM;              // Rotacoes por minuto
 };
+
+void step_motor_control_loop(void* args);
 
 #endif // STEPMOTOR_H_INCLUDED

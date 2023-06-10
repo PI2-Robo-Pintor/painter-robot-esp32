@@ -11,8 +11,11 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
     esp_mqtt_event_handle_t event   = (esp_mqtt_event_handle_t)event_data;
     esp_mqtt_client_handle_t client = event->client;
 
+    Mqtt* mqtt = (Mqtt*)handler_args;
     int msg_id;
     char command = 0;
+
+    ESP_LOGI(TAG, "<<< mqtt.queue %p", &mqtt->queue);
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -53,14 +56,19 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
         printf("DATA=%.*s\r\n", event->data_len, event->data);
 
         command = event->data[0];
+        ESP_LOGI(TAG, "QQQ About to send to Queue");
+        if (mqtt->queue != NULL) {
+            if (xQueueSend(mqtt->queue, &command, (TickType_t)10) == pdPASS) {
+                ESP_LOGI(TAG, "MQTT mensagem enviada p/ Queue");
+            } else
+                ESP_LOGW(TAG, "FALHA MQTT mensagem NÂO enviada p/ Queue");
+        }
         switch (command) {
         case 'a':
             printf("comando a\n");
-            gpio_set_level(BUILTIN_LED, HIGH);
             break;
         case 'b':
             printf("comando b\n");
-            gpio_set_level(BUILTIN_LED, LOW);
             break;
         default:
             printf("comando não reconhecido\n");
@@ -94,6 +102,6 @@ void mqtt_app_start(Mqtt* m) {
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(
-        client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+        client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, &m);
     esp_mqtt_client_start(client);
 }

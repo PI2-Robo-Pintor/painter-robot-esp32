@@ -31,20 +31,11 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
+#include "StepMotor.h"
 #include "mqtt.h"
 #include "tag.h"
 
-static void configure_led(void) {
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
-    gpio_reset_pin(BUILTIN_LED);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BUILTIN_LED, GPIO_MODE_OUTPUT);
-}
-
 extern "C" void app_main(void) {
-    configure_led();
-
-    ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 
@@ -67,5 +58,25 @@ extern "C" void app_main(void) {
     ESP_ERROR_CHECK(example_connect());
 
     Mqtt mqtt;
+
+    StepMotor motor;
+    QueueHandle_t queue = xQueueCreate(10, sizeof(unsigned char));
+    if (!queue)
+        ESP_LOGE(TAG, "Failed to create Queue");
+    else {
+        ESP_LOGI(TAG, "<<< Addr queue %p", &queue);
+        motor.queue = queue;
+        mqtt.queue  = queue;
+    }
+
     mqtt_app_start(&mqtt);
+
+    ESP_LOGW(TAG, "Addr motor %p. oi=%d", &motor, motor.oi);
+    xTaskCreate(
+        step_motor_control_loop,
+        "Task de controle do motor",
+        1024 * 4,
+        &motor,
+        tskIDLE_PRIORITY,
+        NULL);
 }

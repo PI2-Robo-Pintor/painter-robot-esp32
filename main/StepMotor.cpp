@@ -1,27 +1,32 @@
-// Bibliotecas
 #include "StepMotor.h"
 
 StepMotor::StepMotor(void) {
-    // int m_RST = RST;
-    // int m_SLP = SLP;
-    // int m_ENA = ENA;
-    // int m_MS1 = MS1;
-    // int m_MS2 = MS2;
-    // int m_MS3 = MS3;
-    // int m_DIR = DIR;
-    // int m_STP;
+    // FIXME: Tem que revisar esses pinos!!!
+    m_RST = GPIO_NUM_1;
+    m_SLP = GPIO_NUM_2;
+    m_ENA = GPIO_NUM_3;
+    m_MS1 = GPIO_NUM_4;
+    m_MS2 = GPIO_NUM_5;
+    m_MS3 = GPIO_NUM_6;
+    // FIXME: Esses pinos não existem?!?!
+    m_DIR = GPIO_NUM_7;
+    m_STP = GPIO_NUM_8;
 
-    gpio_config_t conf = {};
-    conf.mode          = GPIO_MODE_OUTPUT;
-    conf.pin_bit_mask  = GPIO_NUM_2 | GPIO_NUM_3 | GPIO_NUM_4 | GPIO_NUM_5 | GPIO_NUM_6 | GPIO_NUM_7;
-    conf.intr_type     = GPIO_INTR_DISABLE;
-    gpio_config(&conf);
+    gpio_set_direction(m_RST, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_SLP, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_ENA, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_MS1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_MS2, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_MS3, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(m_DIR, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(m_STP, GPIO_MODE_OUTPUT);
 
     meioPeriodo = 1000;
     PPS         = 0;
     sentido     = true;
     PPR         = 200;
     voltas      = 3;
+    oi          = 131;
 }
 
 /*
@@ -214,4 +219,22 @@ void StepMotor::testMotor(void) {
     disable();                             // Desativa o chip A4988
     vTaskDelay(1000 / portTICK_PERIOD_MS); // Atraso de 1 segundo
     enable();                              // Ativa o chip A4988
+}
+
+void step_motor_control_loop(void* args) {
+    StepMotor* motor = (StepMotor*)args;
+    // FIXME: motor.oi é alterado dentro do loop por algum motivo!!!
+    ESP_LOGE(TAG, "motor.oi é alterado dentro do loop por algum motivo!!!");
+    ESP_LOGI(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> motor %p %d %p",
+             motor, motor->oi, motor->queue);
+
+    char command = 0;
+    while (true) {
+        // ESP_LOGI(TAG, "verifica se tem mensagem em Queue...");
+        // if (xQueueReceive(motor->queue, &command, 10) == pdPASS) {
+        //     ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
+        // }
+        ESP_LOGI(TAG, "step motor control iteration | motor %p %d", motor, motor->oi);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
 }
