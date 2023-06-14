@@ -1,13 +1,10 @@
-#ifndef STEPMOTOR_H_INCLUDED
-#define STEPMOTOR_H_INCLUDED
+#pragma once
 
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
-#include "tag.h"
 
 #define HIGH 1
 #define LOW  0
@@ -29,8 +26,10 @@ public:
     void microStep16();
     void testMotor();
     void printRpm();
-    int test;
+    const char* tag = "StepMotor";
     QueueHandle_t queue;
+
+    static void control_loop(void* args);
 
 private:
     // Definiçoes das Portas Digitais do Arduino
@@ -53,5 +52,3 @@ private:
 };
 
 void step_motor_control_loop(void* args);
-
-#endif // STEPMOTOR_H_INCLUDED

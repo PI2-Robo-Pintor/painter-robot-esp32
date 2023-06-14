@@ -1,11 +1,14 @@
-#ifndef QUEUE_H_INCLUDED
-#define QUEUE_H_INCLUDED
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+// Atuadores
+
 QueueHandle_t stepMotorQueue;
 
-QueueHandle_t sensorsQueue;
+QueueHandle_t solenoidQueue;
 
-#endif // QUEUE_H_INCLUDED
+// Sensores
+
+QueueHandle_t sensorsQueue;
