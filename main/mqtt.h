@@ -1,5 +1,4 @@
-#ifndef MQTT_H_INCLUDED
-#define MQTT_H_INCLUDED
+#pragma once
 
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -8,20 +7,24 @@
 #include "freertos/task.h"
 #include "mqtt_client.h"
 
-// #include "queue.h"
-extern QueueHandle_t qqueue;
-#include "tag.h"
+#include "low_high.h"
 
-#define HIGH 1
-#define LOW  0
+class Mqtt {
+public:
+    QueueHandle_t stepMotorQueue;
+    QueueHandle_t solenoidQueue;
+    QueueHandle_t sensorsQueue;
 
-typedef struct
-{
-    QueueHandle_t queue;
-} Mqtt;
+    static const char* TAG;
+    static const char* TOPIC_STEP_MOTOR;
+    static const char* TOPIC_SOLENOID;
+    static const char* TOPIC_SENSORS;
 
-void log_error_if_nonzero(const char* message, int error_code);
-void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
-void mqtt_app_start(Mqtt* mqtt);
+    static void handle_event(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
+    static void handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event);
 
-#endif // MQTT_H_INCLUDED
+    void start();
+
+private:
+    static void log_error_if_nonzero(const char* message, int error_code);
+};

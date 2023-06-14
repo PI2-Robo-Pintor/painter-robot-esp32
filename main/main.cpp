@@ -53,25 +53,29 @@ extern "C" void app_main(void) {
     Mqtt mqtt;
     StepMotor motor;
 
-    qqueue = xQueueCreate(10, sizeof(unsigned char));
-    if (!qqueue)
-        ESP_LOGE(TAG, "Failed to create Queue");
+    sensorsQueue   = xQueueCreate(10, sizeof(unsigned char));
+    stepMotorQueue = xQueueCreate(10, sizeof(unsigned char));
+    solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
+    if (!stepMotorQueue || !sensorsQueue || !solenoidQueue)
+        ESP_LOGE(TAG, "Failed to create Queues");
     else {
-        ESP_LOGI(TAG, "      Queue %p", qqueue);
-        motor.queue = qqueue;
-        mqtt.queue  = qqueue;
-        ESP_LOGI(TAG, "motor.queue %p", motor.queue);
-        ESP_LOGI(TAG, "mqtt .queue %p", motor.queue);
+        ESP_LOGI(TAG, "      Queue %p", stepMotorQueue);
+        motor.queue         = stepMotorQueue;
+        mqtt.stepMotorQueue = stepMotorQueue;
+
+        mqtt.sensorsQueue  = sensorsQueue;
+        mqtt.solenoidQueue = solenoidQueue;
     }
 
-    mqtt_app_start(&mqtt);
+    mqtt.start();
 
-    ESP_LOGW(TAG, "Addr motor %p. oi=%d", &motor, motor.oi);
     xTaskCreate(
-        step_motor_control_loop,
+        StepMotor::control_loop,
         "Task de controle do motor",
         2048,
         &motor,
         1,
         NULL);
+
+    vTaskDelay(portMAX_DELAY);
 }

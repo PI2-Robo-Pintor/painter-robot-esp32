@@ -36,4 +36,4 @@ na porta USB. Então execute no terminal:
 idf.py build flash monitor
 ```
 
-O ponto de entrada da aplicação está em `painter-robot-esp32.c`.
+O ponto de entrada da aplicação está em `main.cpp`.
