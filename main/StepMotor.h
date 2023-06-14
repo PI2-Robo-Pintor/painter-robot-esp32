@@ -7,8 +7,6 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-// #include "queue.h"
-extern QueueHandle_t stepMotorQueue;
 #include "tag.h"
 
 #define HIGH 1
@@ -31,7 +29,7 @@ public:
     void microStep16();
     void testMotor();
     void printRpm();
-    int oi;
+    int test;
     QueueHandle_t queue;
 
 private:

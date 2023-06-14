@@ -54,11 +54,8 @@ void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event
         printf("DATA=%.*s\r\n", event->data_len, event->data);
 
         command = event->data[0];
-        ESP_LOGI(TAG, "motor.queue %p", mqtt->queue);
-        ESP_LOGI(TAG, "QQQ About to send to Queue %p", mqtt->queue);
-        if (mqtt->queue != NULL) {
-            // if (xQueueSend(mqtt->queue, &command, (TickType_t)0) == pdPASS) {
-            if (xQueueSend(stepMotorQueue, &command, (TickType_t)0) == pdPASS) {
+        if (mqtt->stepMotorQueue != NULL) {
+            if (xQueueSend(mqtt->stepMotorQueue, &command, (TickType_t)0) == pdPASS) {
                 ESP_LOGI(TAG, "MQTT mensagem enviada p/ Queue");
             } else
                 ESP_LOGW(TAG, "FALHA MQTT mensagem NÂO enviada p/ Queue");
@@ -94,14 +91,10 @@ void mqtt_app_start(Mqtt* m) {
     esp_mqtt_client_config_t mqtt_cfg = {};
     mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
     mqtt_cfg.broker.address.port      = 8080;
-    // .broker.address.uri = "ws://172.16.1.215",
-    // .broker.address.port = 1883,
-    // .broker.address.transport = MQTT_TRANSPORT_OVER_WS,
-    // .broker.address.path = "/mqtt"
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(
-        client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, &m);
+        client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, m);
     esp_mqtt_client_start(client);
 }

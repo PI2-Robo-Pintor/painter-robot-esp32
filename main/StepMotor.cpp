@@ -26,7 +26,7 @@ StepMotor::StepMotor(void) {
     sentido     = true;
     PPR         = 200;
     voltas      = 3;
-    oi          = 131;
+    test        = 131;
 }
 
 /*
@@ -223,17 +223,11 @@ void StepMotor::testMotor(void) {
 
 void step_motor_control_loop(void* args) {
     StepMotor* motor = (StepMotor*)args;
-    // FIXME: motor.oi é alterado dentro do loop por algum motivo!!!
-    ESP_LOGE(TAG, "motor.oi é alterado dentro do loop por algum motivo!!!");
-    ESP_LOGI(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> motor %p %d %p",
-             motor, motor->oi, motor->queue);
-
-    char command = 0;
+    char command     = 0;
     while (true) {
-        // ESP_LOGI(TAG, "verifica se tem mensagem em Queue...");
-        // if (xQueueReceive(motor->queue, &command, (TickType_t)10) == pdPASS) {
-        if (xQueueReceive(stepMotorQueue, &command, (TickType_t)10) == pdPASS) {
-            ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
+        ESP_LOGI(TAG, "step motor control iteration | motor .test %d .queue %p", motor->test, motor->queue);
+        if (xQueueReceive(motor->queue, &command, (TickType_t)10) == pdPASS) {
+            // ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
 
             if (command == 'a') {
                 gpio_set_level(GPIO_NUM_2, HIGH);
@@ -241,7 +235,6 @@ void step_motor_control_loop(void* args) {
                 gpio_set_level(GPIO_NUM_2, LOW);
             }
         }
-        ESP_LOGI(TAG, "step motor control iteration | motor %p %d", motor, motor->oi);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

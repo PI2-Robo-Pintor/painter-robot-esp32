@@ -8,8 +8,6 @@
 #include "freertos/task.h"
 #include "mqtt_client.h"
 
-// #include "queue.h"
-extern QueueHandle_t stepMotorQueue;
 #include "tag.h"
 
 #define HIGH 1
@@ -17,7 +15,7 @@ extern QueueHandle_t stepMotorQueue;
 
 typedef struct
 {
-    QueueHandle_t queue;
+    QueueHandle_t stepMotorQueue;
 } Mqtt;
 
 void log_error_if_nonzero(const char* message, int error_code);
