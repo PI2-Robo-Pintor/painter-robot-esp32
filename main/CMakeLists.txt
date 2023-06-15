@@ -1,3 +1,3 @@
-idf_component_register(SRCS "StepMotor.cpp" "painter-robot-esp32.cpp"
-                            "mqtt.cpp"
+idf_component_register(SRCS "mqtt.cpp" "StepMotor.cpp" "main.cpp"
+                           
                         INCLUDE_DIRS ".")
