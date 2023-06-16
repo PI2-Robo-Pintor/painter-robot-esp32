@@ -5,6 +5,8 @@
 
 // Atuadores
 
+QueueHandle_t relayQueue;
+
 QueueHandle_t stepMotorQueue;
 
 QueueHandle_t solenoidQueue;
@@ -12,3 +14,5 @@ QueueHandle_t solenoidQueue;
 // Sensores
 
 QueueHandle_t sensorsQueue;
+
+

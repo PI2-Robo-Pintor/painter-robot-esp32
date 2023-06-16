@@ -1,5 +1,6 @@
-#ifndef _RELE_H
-#define _RELE_H
+#pragma once
+
+#include "pins.h"
 
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -10,30 +11,22 @@
 
 //how to use relay module - define class
 
-class Rele {
+class Relay {
 public:
-    Rele();
+    Relay();
     void on();
     void off();
     void toggle();
     void test();
     void print();
-    const char* tag = "Rele";
+    const char* tag = "Relay";
     QueueHandle_t queue;
 
     static void control_loop(void* args);
 
 private:
     // Definiçoes das Portas Digitais do Arduino
-    gpio_num_t m_rele; // Porta digital D08 - reset do A4988
+    gpio_num_t m_relay; // Porta digital D08 - reset do A4988
 };
 
-void rele_control_loop(void* args);
-
-
-
-
-
-
-
-#endif // _RELE_H
+void relay_control_loop(void* args);
