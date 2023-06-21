@@ -1,10 +1,14 @@
 #pragma once
 
+// https://www.fernandok.com/2019/06/motor-inteligente.html
+
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+
+#include "pins.h"
 
 #define HIGH 1
 #define LOW  0
@@ -50,5 +54,3 @@ private:
     int voltas = 3;         // voltas do motor
     float RPM;              // Rotacoes por minuto
 };
-
-void step_motor_control_loop(void* args);

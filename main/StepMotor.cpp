@@ -2,15 +2,15 @@
 
 StepMotor::StepMotor(void) {
     // FIXME: Tem que revisar esses pinos!!!
-    m_RST = GPIO_NUM_1;
-    m_SLP = GPIO_NUM_2;
-    m_ENA = GPIO_NUM_3;
-    m_MS1 = GPIO_NUM_4;
-    m_MS2 = GPIO_NUM_5;
-    m_MS3 = GPIO_NUM_6;
+    m_RST = PIN_SM_1;
+    m_SLP = PIN_SM_2;
+    m_ENA = PIN_SM_3;
+    m_MS1 = PIN_SM_4;
+    m_MS2 = PIN_SM_5;
+    m_MS3 = PIN_SM_6;
     // FIXME: Esses pinos não existem?!?!
-    m_DIR = GPIO_NUM_7;
-    m_STP = GPIO_NUM_8;
+    m_DIR = PIN_SM_7;
+    m_STP = PIN_SM_8;
 
     gpio_set_direction(m_RST, GPIO_MODE_OUTPUT);
     gpio_set_direction(m_SLP, GPIO_MODE_OUTPUT);
@@ -218,23 +218,6 @@ void StepMotor::testMotor(void) {
     disable();                             // Desativa o chip A4988
     vTaskDelay(1000 / portTICK_PERIOD_MS); // Atraso de 1 segundo
     enable();                              // Ativa o chip A4988
-}
-
-void step_motor_control_loop(void* args) {
-    StepMotor* motor = (StepMotor*)args;
-    char command     = 0;
-    while (true) {
-        ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
-        if (xQueueReceive(motor->queue, &command, (TickType_t)1) == pdPASS) {
-
-            if (command == 'a') {
-                gpio_set_level(GPIO_NUM_2, HIGH);
-            } else {
-                gpio_set_level(GPIO_NUM_2, LOW);
-            }
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 }
 
 void StepMotor::control_loop(void* args) {

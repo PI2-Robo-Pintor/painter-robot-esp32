@@ -60,11 +60,11 @@ extern "C" void app_main(void) {
         ESP_LOGE(TAG, "Failed to create Queues");
     else {
         ESP_LOGI(TAG, "      Queue %p", stepMotorQueue);
-        motor.queue         = stepMotorQueue;
-        mqtt.stepMotorQueue = stepMotorQueue;
+        motor.queue = stepMotorQueue;
 
-        mqtt.sensorsQueue  = sensorsQueue;
-        mqtt.solenoidQueue = solenoidQueue;
+        mqtt.stepMotorQueue = stepMotorQueue;
+        mqtt.sensorsQueue   = sensorsQueue;
+        mqtt.solenoidQueue  = solenoidQueue;
     }
 
     mqtt.start();
