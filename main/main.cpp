@@ -24,6 +24,7 @@
 #include "mqtt_client.h"
 
 #include "StepMotor.h"
+#include "relay.h"
 #include "mqtt.h"
 #include "queue.h"
 #include "tag.h"
@@ -52,25 +53,49 @@ extern "C" void app_main(void) {
 
     Mqtt mqtt;
     StepMotor motor;
+    Relay relay;
 
+
+    sensorsQueue   = xQueueCreate(10, sizeof(unsigned char));
     stepMotorQueue = xQueueCreate(10, sizeof(unsigned char));
-    if (!stepMotorQueue)
-        ESP_LOGE(TAG, "Failed to create Queue");
+    solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
+    
+    relayQueue      = xQueueCreate(10, sizeof(unsigned char));
+    if (!stepMotorQueue || !sensorsQueue || !solenoidQueue || !relayQueue)
+        ESP_LOGE(TAG, "Failed to create Queues");
     else {
         ESP_LOGI(TAG, "      Queue %p", stepMotorQueue);
-        motor.queue = stepMotorQueue;
-        ESP_LOGI(TAG, "motor.queue %p", motor.queue);
-        ESP_LOGI(TAG, "mqtt .queue %p", motor.queue);
+        ESP_LOGI(TAG, "      Queue %p", relayQueue);
+        motor.queue         = stepMotorQueue;
+        mqtt.stepMotorQueue = stepMotorQueue;
+
+        mqtt.sensorsQueue  = sensorsQueue;
+        mqtt.solenoidQueue = solenoidQueue;
+       
+        relay.queue         = stepMotorQueue;
+        //mqtt.relayQueue = relayQueue; // relay mqtt queue
+        
     }
 
-    mqtt_app_start(&mqtt);
+    mqtt.start();
 
-    ESP_LOGW(TAG, "Addr motor %p. oi=%d", &motor, motor.oi);
     xTaskCreate(
-        step_motor_control_loop,
+        StepMotor::control_loop,
         "Task de controle do motor",
         2048,
         &motor,
         1,
         NULL);
+
+    vTaskDelay(portMAX_DELAY);
+
+    xTaskCreate(
+        Relay::control_loop,
+        "Task de controle do relay",
+        2048,
+        &relay,
+        1,
+        NULL);
+    
+    vTaskDelay(portMAX_DELAY);
 }

@@ -26,7 +26,6 @@ StepMotor::StepMotor(void) {
     sentido     = true;
     PPR         = 200;
     voltas      = 3;
-    oi          = 131;
 }
 
 /*
@@ -69,7 +68,7 @@ void StepMotor::enable(void) {
    Descrição: Configura um sinal alto no pino DIR do A4988
 */
 void StepMotor::clockwise(void) {
-    ESP_LOGD(TAG, " Sentido Horario ");
+    ESP_LOGD(tag, " Sentido Horario ");
     gpio_set_level(m_DIR, HIGH); // Configura o sentido HORÁRIO
 }
 
@@ -79,7 +78,7 @@ void StepMotor::clockwise(void) {
     Descrição: Configura um sinal baixo no pino DIR do A4988
  */
 void StepMotor::counterClockwise(void) {
-    ESP_LOGD(TAG, " Sentido anti-Horario ");
+    ESP_LOGD(tag, " Sentido anti-Horario ");
     gpio_set_level(m_DIR, LOW);
 }
 
@@ -118,7 +117,7 @@ void StepMotor::frequency(void) {
              Os pinos MS1,MS2 e MS3 do A4988 em nível baixo configuram o modo full step.
 */
 void StepMotor::fullStep(void) {
-    ESP_LOGD(TAG, " Passo Completo  PPR = 200 ");
+    ESP_LOGD(tag, " Passo Completo  PPR = 200 ");
     PPR = 200;                  // PPR = pulsos por volta
     gpio_set_level(m_MS1, LOW); // Configura modo Passo completo (Full step)
     gpio_set_level(m_MS2, LOW);
@@ -132,7 +131,7 @@ void StepMotor::fullStep(void) {
               Os pinos MS1 = 1,MS2 = 0 e MS3 = 0 do A4988 configuram o modo half step.
 */
 void StepMotor::halfStep(void) {
-    ESP_LOGD(TAG, " Meio Passo  PPR = 400 ");
+    ESP_LOGD(tag, " Meio Passo  PPR = 400 ");
     PPR = 400;                   // PPR = pulsos por volta
     gpio_set_level(m_MS1, HIGH); // Configura modo Meio Passo (Half step)
     gpio_set_level(m_MS2, LOW);
@@ -146,7 +145,7 @@ void StepMotor::halfStep(void) {
               Os pinos MS1 = 0,MS2 = 1 e MS3 = 0 do A4988 configuram o modo 1/4 step.
 */
 void StepMotor::microStep4(void) {
-    ESP_LOGD(TAG, " Micro-passo 1/4  PPR = 800 ");
+    ESP_LOGD(tag, " Micro-passo 1/4  PPR = 800 ");
     PPR = 800;                  // PPR = pulsos por volta
     gpio_set_level(m_MS1, LOW); // Configura modo Micro Passo 1/4
     gpio_set_level(m_MS2, HIGH);
@@ -160,7 +159,7 @@ void StepMotor::microStep4(void) {
              Os pinos MS1 = 1,MS2 = 1 e MS3 = 0 do A4988 configuram o modo 1/8 step.
 */
 void StepMotor::microStep8(void) {
-    ESP_LOGD(TAG, " Micro-passo 1/8  PPR = 1600 ");
+    ESP_LOGD(tag, " Micro-passo 1/8  PPR = 1600 ");
     PPR = 1600;                  // PPR = pulsos por volta
     gpio_set_level(m_MS1, HIGH); // Configura modo Micro Passo 1/8
     gpio_set_level(m_MS2, HIGH);
@@ -174,7 +173,7 @@ void StepMotor::microStep8(void) {
              Os pinos MS1 = 1,MS2 = 1 e MS3 = 1 do A4988 configuram o modo 1/16 step.
 */
 void StepMotor::microStep16(void) {
-    ESP_LOGD(TAG, " Micro-passo 1/16  PPR = 3200 ");
+    ESP_LOGD(tag, " Micro-passo 1/16  PPR = 3200 ");
     PPR = 3200;                  // PPR = pulsos por volta
     gpio_set_level(m_MS1, HIGH); // Configura modo Micro Passo 1/16
     gpio_set_level(m_MS2, HIGH);
@@ -188,7 +187,7 @@ void StepMotor::microStep16(void) {
 */
 void StepMotor::printRpm(void) {
     frequency(); // calcula Pulsos, PPS e RPM
-    ESP_LOGD(TAG,
+    ESP_LOGD(tag,
              "Voltas=%d, pulsos=%ld, PPS=%.2f, RPM=%.2f",
              voltas, pulsos, PPS, RPM);
 }
@@ -223,17 +222,10 @@ void StepMotor::testMotor(void) {
 
 void step_motor_control_loop(void* args) {
     StepMotor* motor = (StepMotor*)args;
-    // FIXME: motor.oi é alterado dentro do loop por algum motivo!!!
-    ESP_LOGE(TAG, "motor.oi é alterado dentro do loop por algum motivo!!!");
-    ESP_LOGI(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> motor %p %d %p",
-             motor, motor->oi, motor->queue);
-
-    char command = 0;
+    char command     = 0;
     while (true) {
-        // ESP_LOGI(TAG, "verifica se tem mensagem em Queue...");
-        // if (xQueueReceive(motor->queue, &command, (TickType_t)10) == pdPASS) {
-        if (xQueueReceive(stepMotorQueue, &command, (TickType_t)10) == pdPASS) {
-            ESP_LOGI(TAG, "Mensagem recebdia do Mqtt! comando [%c]", command);
+        ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
+        if (xQueueReceive(motor->queue, &command, (TickType_t)1) == pdPASS) {
 
             if (command == 'a') {
                 gpio_set_level(GPIO_NUM_2, HIGH);
@@ -241,7 +233,24 @@ void step_motor_control_loop(void* args) {
                 gpio_set_level(GPIO_NUM_2, LOW);
             }
         }
-        ESP_LOGI(TAG, "step motor control iteration | motor %p %d", motor, motor->oi);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void StepMotor::control_loop(void* args) {
+    StepMotor* motor = (StepMotor*)args;
+
+    char command = 0;
+    while (true) {
+        ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
+        if (xQueueReceive(motor->queue, &command, (TickType_t)1) == pdPASS) {
+
+            if (command == 'a') {
+                gpio_set_level(GPIO_NUM_2, HIGH);
+            } else {
+                gpio_set_level(GPIO_NUM_2, LOW);
+            }
+        }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
