@@ -223,9 +223,20 @@ void StepMotor::testMotor(void) {
 void StepMotor::control_loop(void* args) {
     StepMotor* motor = (StepMotor*)args;
 
+    enum Device {
+        DEV_STEP_MOTOR,
+        DEV_PRESSURE_SENSOR,
+    };
+
+    typedef struct {
+        Device device;
+        uint8_t command;
+    } CustomMessage;
+    CustomMessage message;
+
     char command = 0;
     while (true) {
-        ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
+        // ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
         if (xQueueReceive(motor->queue, &command, (TickType_t)1) == pdPASS) {
 
             if (command == 'a') {
