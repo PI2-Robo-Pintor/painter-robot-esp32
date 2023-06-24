@@ -100,6 +100,6 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
     } else {
-        ESP_LOGW(TAG, "Tópico não reconehcido %s", topic);
+        ESP_LOGW(TAG, "Tópico não reconhecido %s", topic);
     }
 }

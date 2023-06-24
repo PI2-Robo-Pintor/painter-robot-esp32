@@ -13,6 +13,12 @@
 #define HIGH 1
 #define LOW  0
 
+typedef enum {
+    STOPPED,
+    RUNNING,
+    TEST,
+} MotorState;
+
 class StepMotor {
 public:
     StepMotor();
@@ -30,21 +36,25 @@ public:
     void microStep16();
     void testMotor();
     void printRpm();
-    const char* tag = "StepMotor";
+    static const char* tag;
     QueueHandle_t queue;
 
     static void control_loop(void* args);
 
 private:
+    MotorState state;
+
     // Definiçoes das Portas Digitais do Arduino
-    gpio_num_t m_RST; // Porta digital D08 - reset do A4988
-    gpio_num_t m_SLP; // Porta digital D09 - dormir (sleep) A4988
-    gpio_num_t m_ENA; // Porta digital D07 - ativa (enable) A4988
-    gpio_num_t m_MS1; // Porta digital D04 - MS1 do A4988
-    gpio_num_t m_MS2; // Porta digital D05 - MS2 do A4988
-    gpio_num_t m_MS3; // Porta digital D06 - MS3 do A4988
-    gpio_num_t m_DIR; // Porta digital D03 - direção (direction) do A4988
-    gpio_num_t m_STP; // Porta digital D02 - passo(step) do A4988
+    gpio_num_t pin_direction;
+    gpio_num_t pin_step;
+    gpio_num_t pin_enable;
+    gpio_num_t pin_alarm;
+    gpio_num_t pin_pend;
+    gpio_num_t pin_led;
+    const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
+    // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
+    // 10us roda bem. Devemos descobrir pq não roda bem com 2us
+    const int TIME_HIGH_MS = 1;
 
     int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
     float PPS       = 0;    // Pulsos por segundo

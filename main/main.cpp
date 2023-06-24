@@ -48,7 +48,7 @@ extern "C" void app_main(void) {
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    ESP_ERROR_CHECK(example_connect());
+    // ESP_ERROR_CHECK(example_connect());
 
     Mqtt mqtt;
     StepMotor motor;
@@ -67,15 +67,23 @@ extern "C" void app_main(void) {
         mqtt.solenoidQueue  = solenoidQueue;
     }
 
-    mqtt.start();
+    // mqtt.start();
 
-    xTaskCreate(
+    xTaskCreatePinnedToCore(
         StepMotor::control_loop,
         "Task de controle do motor",
         2048,
         &motor,
         1,
-        NULL);
+        NULL,
+        0);
+    // xTaskCreate(
+    //     StepMotor::control_loop,
+    //     "Task de controle do motor",
+    //     2048,
+    //     &motor,
+    //     1,
+    //     NULL);
 
     vTaskDelay(portMAX_DELAY);
 }
