@@ -2,6 +2,10 @@
 
 const char* StepMotor::tag = "StepMotor";
 
+typedef struct {
+    uint64_t event_count;
+} example_queue_element_t;
+
 StepMotor::StepMotor(void) {
     state = STOPPED;
 
@@ -11,17 +15,56 @@ StepMotor::StepMotor(void) {
 
     // Apenas teste de LED interna
     gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
-    gpio_set_level(pin_direction, LOW);
 
     gpio_set_direction(pin_direction, GPIO_MODE_OUTPUT);
     gpio_set_direction(pin_step, GPIO_MODE_OUTPUT);
-    gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
+    gpio_set_level(pin_direction, !LOW);
 
     meioPeriodo = 1000;
     PPS         = 0;
     sentido     = true;
     PPR         = 200;
     voltas      = 3;
+    gptimer     = NULL;
+
+    gptimer_init();
+}
+
+void StepMotor::gptimer_init() {
+    example_queue_element_t ele;
+    QueueHandle_t queue = xQueueCreate(10, sizeof(example_queue_element_t));
+    if (!queue) {
+        ESP_LOGE(tag, "Creating queue failed");
+        return;
+    }
+
+    ESP_LOGI(tag, "Create timer handle");
+    gptimer                       = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src       = GPTIMER_CLK_SRC_DEFAULT,
+        .direction     = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000, // 1MHz, 1 tick=1us
+    };
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
+
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = example_timer_on_alarm_cb_v1,
+    };
+    // ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, this));
+
+    ESP_LOGI(tag, "Enable timer");
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
+
+    ESP_LOGI(tag, "Start timer, stop it at alarm event");
+    gptimer_alarm_config_t alarm_config;
+    alarm_config.reload_count               = 0;
+    alarm_config.alarm_count                = 200;
+    alarm_config.flags.auto_reload_on_alarm = true;
+
+    ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_start(gptimer));
 }
 
 /*
@@ -212,13 +255,37 @@ void StepMotor::testMotor(void) {
 void StepMotor::control_loop(void* args) {
     StepMotor* motor = (StepMotor*)args;
 
+    int counter = 0;
+
+    gptimer_alarm_config_t alarm_config1;
+    alarm_config1.reload_count               = 0;
+    alarm_config1.alarm_count                = 80;
+    alarm_config1.flags.auto_reload_on_alarm = true;
+
+    gptimer_alarm_config_t alarm_config2;
+    alarm_config2.reload_count               = 0;
+    alarm_config2.alarm_count                = 80;
+    alarm_config2.flags.auto_reload_on_alarm = true;
+
+    ESP_LOGI(tag, "control");
     char command = 0;
     while (true) {
-        ESP_LOGI(tag, "step motor control");
+        counter++;
+        ESP_LOGI(tag, "control: counter %d", motor->counter);
         BaseType_t result = xQueueReceive(motor->queue, &command, (TickType_t)1);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
             // continue;
+        }
+
+        if (counter % 2 == 0) {
+            gptimer_stop(motor->gptimer);
+            gptimer_set_alarm_action(motor->gptimer, &alarm_config2);
+            gptimer_start(motor->gptimer);
+        } else {
+            gptimer_stop(motor->gptimer);
+            gptimer_set_alarm_action(motor->gptimer, &alarm_config1);
+            gptimer_start(motor->gptimer);
         }
 
         // if (command == 'a') {
@@ -237,11 +304,9 @@ void StepMotor::control_loop(void* args) {
         //     ESP_LOGI(tag, "Step");
         //     break;
         // case TEST:
-        uint32_t tick_rate = xPortGetTickRateHz();
-        ESP_LOGI(tag, "TEST. Tick Rate %lu", tick_rate);
-        for (int i = 0; i < motor->STEPS_PER_REVOLUTION; i++) {
-            motor->step();
-        }
+        // for (int i = 0; i < motor->STEPS_PER_REVOLUTION; i++) {
+        //     motor->step();
+        // }
 
         //     motor->state = STOPPED;
 
@@ -251,7 +316,22 @@ void StepMotor::control_loop(void* args) {
         //     break;
         // }
 
-        vTaskDelay(1 / portTICK_PERIOD_MS);
-        // vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+}
+
+bool IRAM_ATTR example_timer_on_alarm_cb_v1(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
+    BaseType_t high_task_awoken = pdFALSE;
+    StepMotor* motor            = (StepMotor*)user_data;
+    // stop timer immediately
+    // gptimer_stop(timer);
+    // Retrieve count value and send to queue
+    // motor->step();
+    motor->counter++;
+    // ESP_LOGI("TIMER", "step state %d", motor->step_state);
+    motor->step_state = !motor->step_state;
+    gpio_set_level(motor->pin_step, motor->step_state);
+
+    // return whether we need to yield at the end of ISR
+    return (high_task_awoken == pdTRUE);
 }
