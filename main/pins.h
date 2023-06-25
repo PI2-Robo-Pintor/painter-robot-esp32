@@ -2,4 +2,4 @@
 #include "driver/gpio.h"
 
 
-#define PIN_RELAY GPIO_NUM_2
+#define PIN_RELAY GPIO_NUM_23

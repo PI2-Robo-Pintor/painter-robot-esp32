@@ -244,7 +244,7 @@ void StepMotor::control_loop(void* args) {
     while (true) {
         ESP_LOGI(motor->tag, "step motor control | motor.queue %p", motor->queue);
         if (xQueueReceive(motor->queue, &command, (TickType_t)1) == pdPASS) {
-
+            
             if (command == 'a') {
                 gpio_set_level(GPIO_NUM_2, HIGH);
             } else {

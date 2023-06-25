@@ -4,6 +4,7 @@ const char* Mqtt::TAG              = "Mqtt";
 const char* Mqtt::TOPIC_SENSORS    = "pi2/sensors";
 const char* Mqtt::TOPIC_STEP_MOTOR = "pi2/step-motor";
 const char* Mqtt::TOPIC_SOLENOID   = "pi2/solenoid";
+const char* Mqtt::TOPIC_RELAY      = "pi2/relay";
 
 void Mqtt::log_error_if_nonzero(const char* message, int error_code) {
     if (error_code != 0) {
@@ -42,6 +43,9 @@ void Mqtt::handle_event(void* handler_args, esp_event_base_t base, int32_t event
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         msg_id = esp_mqtt_client_subscribe(client, TOPIC_SENSORS, 1);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+
+        msg_id = esp_mqtt_client_subscribe(client, TOPIC_RELAY, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         break;
@@ -99,6 +103,11 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ Solenoid Queue");
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
+    } else if (strcmp(topic, TOPIC_RELAY) == 0) {
+        if (xQueueSend(mqtt->relayQueue, &command, 0) == pdPASS) {
+            ESP_LOGI(TAG, "MQTT mensagem enviada p/ Relay Queue");
+        } else
+            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Relay Queue");
     } else {
         ESP_LOGW(TAG, "Tópico não reconehcido %s", topic);
     }
