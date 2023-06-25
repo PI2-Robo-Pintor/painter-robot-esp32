@@ -4,7 +4,6 @@
 
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
-#include "driver/timer.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -24,27 +23,13 @@ typedef enum {
 class StepMotor {
 public:
     StepMotor();
-    void reset();
-    void disable();
-    void enable();
-    void clockwise();
-    void counterClockwise();
-    void step();
-    void frequency();
-    void fullStep();
-    void halfStep();
-    void microStep4();
-    void microStep8();
-    void microStep16();
-    void testMotor();
-    void printRpm();
-    static const char* tag;
-    QueueHandle_t queue;
-
-    gptimer_handle_t gptimer;
-
     static void control_loop(void* args);
+    static bool IRAM_ATTR alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
+
+    static const char* tag;
     bool step_state = 0;
+    bool dir_state  = 0;
+    int counter     = 0;
 
     gpio_num_t pin_direction;
     gpio_num_t pin_step;
@@ -53,17 +38,18 @@ public:
     gpio_num_t pin_pend;
     gpio_num_t pin_led;
 
-    int counter = 0;
+    QueueHandle_t queue;
+    gptimer_handle_t gptimer;
+    gptimer_alarm_config_t alarm_config;
 
 private:
     MotorState state;
+    MotorState prev_state;
 
     void gptimer_init();
 
-    // Definiçoes das Portas Digitais do Arduino
     const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
-    // 10us roda bem. Devemos descobrir pq não roda bem com 2us
     const int TIME_HIGH_MS = 1;
 
     int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
@@ -74,5 +60,3 @@ private:
     int voltas = 3;         // voltas do motor
     float RPM;              // Rotacoes por minuto
 };
-
-bool IRAM_ATTR example_timer_on_alarm_cb_v1(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);

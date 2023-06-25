@@ -48,7 +48,7 @@ extern "C" void app_main(void) {
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    // ESP_ERROR_CHECK(example_connect());
+    ESP_ERROR_CHECK(example_connect());
 
     Mqtt mqtt;
     StepMotor motor;
@@ -67,7 +67,7 @@ extern "C" void app_main(void) {
         mqtt.solenoidQueue  = solenoidQueue;
     }
 
-    // mqtt.start();
+    mqtt.start();
 
     xTaskCreatePinnedToCore(
         StepMotor::control_loop,
