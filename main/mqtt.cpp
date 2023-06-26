@@ -4,6 +4,7 @@ const char* Mqtt::TAG              = "Mqtt";
 const char* Mqtt::TOPIC_SENSORS    = "pi2/sensors";
 const char* Mqtt::TOPIC_STEP_MOTOR = "pi2/step-motor";
 const char* Mqtt::TOPIC_SOLENOID   = "pi2/solenoid";
+const char* Mqtt::TOPIC_GENERAL    = "pi2/general";
 
 void Mqtt::log_error_if_nonzero(const char* message, int error_code) {
     if (error_code != 0) {
@@ -41,7 +42,10 @@ void Mqtt::handle_event(void* handler_args, esp_event_base_t base, int32_t event
         msg_id = esp_mqtt_client_subscribe(client, TOPIC_SOLENOID, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_subscribe(client, TOPIC_SENSORS, 1);
+        // msg_id = esp_mqtt_client_subscribe(client, TOPIC_SENSORS, 1);
+        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+
+        msg_id = esp_mqtt_client_subscribe(client, TOPIC_GENERAL, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         break;
@@ -82,13 +86,16 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     // com \0 no final.
     char topic[128];
     memcpy(topic, event->topic, event->topic_len);
-    topic[event->topic_len] = 0;
+    topic[event->topic_len] = '\0';
 
-    printf("TOPIC=%.*s .. %s\n", event->topic_len, event->topic, topic);
-    printf(" DATA=%.*s\n", event->data_len, event->data);
+    char data[256];
+    memcpy(data, event->data, event->data_len);
+    data[event->data_len] = '\0';
+
+    cJSON* root = cJSON_Parse(data);
+    ESP_LOGI(TAG, "data: %s", data);
 
     char command = event->data[0];
-
     if (strcmp(topic, TOPIC_STEP_MOTOR) == 0) {
         if (xQueueSend(mqtt->stepMotorQueue, &command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ StepMotor Queue");
@@ -99,7 +106,43 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ Solenoid Queue");
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
+    } else if (strcmp(topic, TOPIC_GENERAL) == 0) {
+        char command = parse_command(root);
+        if (xQueueSend(mqtt->stepMotorQueue, &command, 0) == pdPASS) {
+            ESP_LOGI(TAG, "MQTT mensagem enviada p/ StepMotor Queue");
+        } else
+            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ StepMotor Queue");
     } else {
         ESP_LOGW(TAG, "Tópico não reconhecido %s", topic);
     }
+
+    cJSON_Delete(root);
+}
+
+char Mqtt::parse_command(cJSON* root) {
+    char command = 0;
+    int on_off   = 0;
+    int height   = 0;
+    int value    = cJSON_GetObjectItem(root, "value")->valueint;
+    Type type    = (Type)cJSON_GetObjectItem(root, "type")->valueint;
+
+    switch (type) {
+    case T_ON_OFF:
+        on_off = value;
+        if (on_off == 1)
+            command = 'x';
+        else
+            command = 'z';
+        break;
+    case T_MIN_HEIGHT:
+        height = value;
+        break;
+    case T_MAX_HEIGHT:
+        height = value;
+        break;
+    default:
+        break;
+    }
+
+    return command;
 }

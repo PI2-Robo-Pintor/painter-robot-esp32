@@ -24,7 +24,7 @@ class StepMotor {
 public:
     StepMotor();
     static void control_loop(void* args);
-    static bool IRAM_ATTR alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
+    static bool IRAM_ATTR incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
 
     static const char* tag;
     bool step_state = 0;

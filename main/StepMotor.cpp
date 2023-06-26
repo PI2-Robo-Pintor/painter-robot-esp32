@@ -2,10 +2,6 @@
 
 const char* StepMotor::tag = "StepMotor";
 
-typedef struct {
-    uint64_t event_count;
-} example_queue_element_t;
-
 StepMotor::StepMotor(void) {
     state = STOPPED;
 
@@ -42,20 +38,18 @@ void StepMotor::gptimer_init() {
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
     gptimer_event_callbacks_t cbs = {
-        .on_alarm = alarm_cb,
+        .on_alarm = incomplete_step,
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, this));
 
     ESP_LOGI(tag, "Enable timer");
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
 
-    ESP_LOGI(tag, "Start timer, stop it at alarm event");
     alarm_config.reload_count               = 0;
     alarm_config.alarm_count                = 400;
     alarm_config.flags.auto_reload_on_alarm = true;
 
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
-    // ESP_ERROR_CHECK(gptimer_start(gptimer));
 }
 
 void StepMotor::control_loop(void* args) {
@@ -67,20 +61,19 @@ void StepMotor::control_loop(void* args) {
     char command = 0;
     while (true) {
         counter++;
-        ESP_LOGI(tag, "control: counter %d", motor->counter);
-        BaseType_t result = xQueueReceive(motor->queue, &command, (TickType_t)1);
+        command           = 0;
+        BaseType_t result = xQueueReceive(motor->queue, &command, portMAX_DELAY);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
             // continue;
         }
 
+        ESP_LOGI(tag, "control: command %c", command);
         if (command == 'x') {
             motor->state = RUNNING;
-            gptimer_start(motor->gptimer);
             gpio_set_level(GPIO_NUM_2, HIGH);
         } else if (command == 'z') {
             motor->state = STOPPED;
-            gptimer_stop(motor->gptimer);
             gpio_set_level(GPIO_NUM_2, LOW);
         } else if (command == 'y') {
             motor->dir_state = !motor->dir_state;
@@ -88,13 +81,14 @@ void StepMotor::control_loop(void* args) {
             ESP_LOGI(tag, "invertendo sentido de deslocamento");
         } else if ('a' <= command && command <= 'f') {
             int step_delay                                 = 80 + (command - 'a') * 20;
-            motor->alarm_config.reload_count               = 0;
             motor->alarm_config.alarm_count                = step_delay;
+            motor->alarm_config.reload_count               = 0;
             motor->alarm_config.flags.auto_reload_on_alarm = true;
             gptimer_stop(motor->gptimer);
             gptimer_set_alarm_action(motor->gptimer, &motor->alarm_config);
             gptimer_start(motor->gptimer);
         } else if (command == 0) {
+            ESP_LOGW(tag, "Nenhum comando");
         } else {
             ESP_LOGE(tag, "Comando não reconhecido: [%c]", command);
         }
@@ -105,17 +99,16 @@ void StepMotor::control_loop(void* args) {
                 gptimer_start(motor->gptimer);
             break;
         case STOPPED:
+            // FIXME: tenho que rever como vai ser a atualização do estado
             gptimer_stop(motor->gptimer);
             break;
         default:
             break;
         }
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
-bool StepMotor::alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
+bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
     motor->counter++;
