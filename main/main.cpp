@@ -55,7 +55,7 @@ extern "C" void app_main(void) {
 
     Mqtt mqtt;
     StepMotor motor;
-    Relay rel(PIN_RELAY);
+    Relay rel(PIN_RELAY_2);
 
 
     sensorsQueue   = xQueueCreate(10, sizeof(unsigned char));

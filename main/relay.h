@@ -14,7 +14,7 @@
 
 class Relay {
 public:
-    Relay();
+    Relay(gpio_num_t pino);
     void on();
     void off();
     void toggle();

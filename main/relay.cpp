@@ -5,23 +5,23 @@ Relay::Relay(gpio_num_t pino) {
     // Defina o número do pino apropriado para o relé
     m_relay = pino;
     // Configura o pino do relé como saída
-    gpio_set_direction(PIN_RELAY, GPIO_MODE_OUTPUT);
+    gpio_set_direction(m_relay, GPIO_MODE_OUTPUT);
 
-    gpio_set_level(PIN_RELAY, LOW); // Desliga o relé inicialmente
+    gpio_set_level(m_relay, LOW); // Desliga o relé inicialmente
 }
 
 void Relay::on() {
-    gpio_set_level(PIN_RELAY, HIGH); // Liga o relé
+    gpio_set_level(m_relay, HIGH); // Liga o relé
     state = true; // Atualiza o estado para ligado
 }
 
 void Relay::off() {
-    gpio_set_level(PIN_RELAY, LOW); // Desliga o relé
+    gpio_set_level(m_relay, LOW); // Desliga o relé
     state = false; // Atualiza o estado para desligado
 }
 
 void Relay::toggle() {
-    gpio_set_level(PIN_RELAY, !gpio_get_level(PIN_RELAY)); // Inverte o estado do relé
+    gpio_set_level(m_relay, !gpio_get_level(m_relay)); // Inverte o estado do relé
     state = !state; // Atualiza o estado para o novo valor
 }
 
