@@ -1,9 +1,9 @@
 #include "relay.h"
 
 
-Relay::Relay(void) {
+Relay::Relay(gpio_num_t pino) {
     // Defina o número do pino apropriado para o relé
-    m_relay = PIN_RELAY;
+    m_relay = pino;
     // Configura o pino do relé como saída
     gpio_set_direction(PIN_RELAY, GPIO_MODE_OUTPUT);
 

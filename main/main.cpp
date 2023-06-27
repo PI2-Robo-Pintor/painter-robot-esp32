@@ -29,6 +29,7 @@
 #include "mqtt.h"
 #include "queue.h"
 #include "tag.h"
+#include "pins.h"
 
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
@@ -54,7 +55,7 @@ extern "C" void app_main(void) {
 
     Mqtt mqtt;
     StepMotor motor;
-    Relay rel;
+    Relay rel(PIN_RELAY);
 
 
     sensorsQueue   = xQueueCreate(10, sizeof(unsigned char));
