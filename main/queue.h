@@ -3,6 +3,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+QueueHandle_t mainQueue;
+QueueHandle_t mqttQueue;
+
 // Atuadores
 
 QueueHandle_t relayQueue;

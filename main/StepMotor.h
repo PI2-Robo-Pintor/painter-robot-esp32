@@ -1,46 +1,63 @@
 #pragma once
 
+// https://www.fernandok.com/2019/06/motor-inteligente.html
+
 #include "driver/gpio.h"
+#include "driver/gptimer.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "data_command.h"
+#include "pins.h"
+
 #define HIGH 1
 #define LOW  0
+
+typedef enum {
+    STOPPED,
+    RUNNING,
+    TEST,
+} MotorState;
+
+#define UP   true
+#define DOWN false
 
 class StepMotor {
 public:
     StepMotor();
-    void reset();
-    void disable();
-    void enable();
-    void clockwise();
-    void counterClockwise();
-    void step();
-    void frequency();
-    void fullStep();
-    void halfStep();
-    void microStep4();
-    void microStep8();
-    void microStep16();
-    void testMotor();
-    void printRpm();
-    const char* tag = "StepMotor";
-    QueueHandle_t queue;
-
     static void control_loop(void* args);
+    static bool IRAM_ATTR incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
+    void start();
+    void stop();
+    void set_speed(int speed);
+    void set_direction(int dir);
+
+    static const char* tag;
+    bool step_state = 0;
+    bool dir_state  = UP;
+    int counter     = 0;
+
+    gpio_num_t pin_direction;
+    gpio_num_t pin_step;
+    gpio_num_t pin_enable;
+    gpio_num_t pin_alarm;
+    gpio_num_t pin_pend;
+    gpio_num_t pin_led;
+
+    QueueHandle_t queue;
+    gptimer_handle_t gptimer;
+    gptimer_alarm_config_t alarm_config;
 
 private:
-    // Definiçoes das Portas Digitais do Arduino
-    gpio_num_t m_RST; // Porta digital D08 - reset do A4988
-    gpio_num_t m_SLP; // Porta digital D09 - dormir (sleep) A4988
-    gpio_num_t m_ENA; // Porta digital D07 - ativa (enable) A4988
-    gpio_num_t m_MS1; // Porta digital D04 - MS1 do A4988
-    gpio_num_t m_MS2; // Porta digital D05 - MS2 do A4988
-    gpio_num_t m_MS3; // Porta digital D06 - MS3 do A4988
-    gpio_num_t m_DIR; // Porta digital D03 - direção (direction) do A4988
-    gpio_num_t m_STP; // Porta digital D02 - passo(step) do A4988
+    MotorState state;
+    MotorState prev_state;
+
+    void gptimer_init();
+
+    const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
+    // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
 
     int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
     float PPS       = 0;    // Pulsos por segundo
@@ -50,5 +67,3 @@ private:
     int voltas = 3;         // voltas do motor
     float RPM;              // Rotacoes por minuto
 };
-
-void step_motor_control_loop(void* args);
