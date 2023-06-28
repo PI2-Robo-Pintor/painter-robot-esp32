@@ -8,13 +8,15 @@ StepMotor::StepMotor(void) {
     pin_direction = PIN_SM_DIRECTION;
     pin_step      = PIN_SM_STEP;
     pin_led       = PIN_SM_LED;
+    pin_enable    = PIN_SM_ENABLE;
 
     // Apenas teste de LED interna
     gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
 
     gpio_set_direction(pin_direction, GPIO_MODE_OUTPUT);
     gpio_set_direction(pin_step, GPIO_MODE_OUTPUT);
-    // gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
+    gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
+
     gpio_set_level(pin_direction, dir_state);
 
     meioPeriodo = 1000;
@@ -23,8 +25,9 @@ StepMotor::StepMotor(void) {
     PPR         = 200;
     voltas      = 3;
     gptimer     = NULL;
-
     gptimer_init();
+
+    stop();
 }
 
 void StepMotor::gptimer_init() {
@@ -42,14 +45,47 @@ void StepMotor::gptimer_init() {
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, this));
 
-    ESP_LOGI(tag, "Enable timer");
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    ESP_LOGI(tag, "Enabled step timer");
 
     alarm_config.reload_count               = 0;
     alarm_config.alarm_count                = 400;
     alarm_config.flags.auto_reload_on_alarm = true;
 
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+}
+
+void StepMotor::start() {
+    this->state = RUNNING;
+    gpio_set_level(GPIO_NUM_2, HIGH);
+    gpio_set_level(pin_enable, LOW);
+    // FIXME: E se o timer já tiver começado?
+    gptimer_start(this->gptimer);
+}
+
+void StepMotor::stop() {
+    this->state = STOPPED;
+    gpio_set_level(pin_enable, HIGH);
+    gpio_set_level(GPIO_NUM_2, LOW);
+    gptimer_stop(this->gptimer);
+}
+
+void StepMotor::set_speed(int speed) {
+    // Por enquanto esse speed é um delay em microsegundos
+    // int step_delay                                = 80 + (speed - 'a') * 20;
+    this->alarm_config.alarm_count                = speed;
+    this->alarm_config.reload_count               = 0;
+    this->alarm_config.flags.auto_reload_on_alarm = true;
+    gptimer_stop(this->gptimer);
+    gptimer_set_alarm_action(this->gptimer, &this->alarm_config);
+    // Não necessariamente eu preciso mudar a velocidade agr
+    gptimer_start(this->gptimer);
+}
+
+void StepMotor::set_direction(int dir) {
+    this->dir_state = dir;
+    gpio_set_level(this->pin_direction, this->dir_state);
+    ESP_LOGI(tag, "invertendo sentido de deslocamento");
 }
 
 void StepMotor::control_loop(void* args) {
@@ -74,12 +110,16 @@ void StepMotor::control_loop(void* args) {
 
         ESP_LOGI(tag, "control: command 0x%02X", c.type);
 
+        // Apenas comandos de debug
         if (command == 'x') {
             motor->state = RUNNING;
             gpio_set_level(GPIO_NUM_2, HIGH);
+            // FIXME: E se o timer já tiver começado?
+            gptimer_start(motor->gptimer);
         } else if (command == 'z') {
             motor->state = STOPPED;
             gpio_set_level(GPIO_NUM_2, LOW);
+            gptimer_stop(motor->gptimer);
         } else if (command == 'y') {
             motor->dir_state = !motor->dir_state;
             gpio_set_level(motor->pin_direction, motor->dir_state);
@@ -98,18 +138,18 @@ void StepMotor::control_loop(void* args) {
             ESP_LOGE(tag, "Comando não reconhecido: [%c]", command);
         }
 
-        switch (motor->state) {
-        case RUNNING:
-            if (motor->prev_state != RUNNING)
-                gptimer_start(motor->gptimer);
-            break;
-        case STOPPED:
-            // FIXME: tenho que rever como vai ser a atualização do estado
-            gptimer_stop(motor->gptimer);
-            break;
-        default:
-            break;
-        }
+        // switch (motor->state) {
+        // case RUNNING:
+        //     if (motor->prev_state != RUNNING)
+        //         gptimer_start(motor->gptimer);
+        //     break;
+        // case STOPPED:
+        //     // FIXME: tenho que rever como vai ser a atualização do estado
+        //     gptimer_stop(motor->gptimer);
+        //     break;
+        // default:
+        //     break;
+        // }
     }
 }
 

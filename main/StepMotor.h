@@ -21,15 +21,22 @@ typedef enum {
     TEST,
 } MotorState;
 
+#define UP   true
+#define DOWN false
+
 class StepMotor {
 public:
     StepMotor();
     static void control_loop(void* args);
     static bool IRAM_ATTR incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
+    void start();
+    void stop();
+    void set_speed(int speed);
+    void set_direction(int dir);
 
     static const char* tag;
     bool step_state = 0;
-    bool dir_state  = 0;
+    bool dir_state  = UP;
     int counter     = 0;
 
     gpio_num_t pin_direction;

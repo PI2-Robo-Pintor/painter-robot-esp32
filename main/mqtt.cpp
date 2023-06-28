@@ -96,8 +96,20 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     ESP_LOGI(TAG, "data: %s", data);
 
     char command = event->data[0];
+    // NOTE: tópicos de produção
+    if (strcmp(topic, TOPIC_GENERAL) == 0) {
+        Command command = {
+            .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
+            .value = cJSON_GetObjectItem(root, "value")->valueint,
+        };
+
+        if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+            ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
+        } else
+            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO p/ main control loop");
+    }
     // NOTE: tópicos para depuração
-    if (strcmp(topic, TOPIC_STEP_MOTOR) == 0) {
+    else if (strcmp(topic, TOPIC_STEP_MOTOR) == 0) {
         if (xQueueSend(mqtt->stepMotorQueue, &command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ StepMotor Queue");
         } else
@@ -108,24 +120,15 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
     }
-    // NOTE: tópicos de produção
-    else if (strcmp(topic, TOPIC_GENERAL) == 0) {
-        Command command = {
-            .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
-            .value = cJSON_GetObjectItem(root, "value")->valueint,
-        };
 
-        if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
-            ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
-        } else
-            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO p/ main control loop");
-    } else {
+    else {
         ESP_LOGW(TAG, "Tópico não reconhecido %s", topic);
     }
 
     cJSON_Delete(root);
 }
 
+// FIXME: publish deveria receber apenas um json ou buffer de char
 void Mqtt::publish(const char* topic, AllData* data) {
     cJSON* root = cJSON_CreateObject();
 

@@ -28,6 +28,15 @@
 static const char* TAG              = "PI2-Robo-Pintor";
 static const char* tag_main_control = "Main loop control";
 
+static void IRAM_ATTR handle_end_stop(void* args) {
+    Command command = {
+        .type  = T_ON_OFF,
+        .value = 0,
+    };
+
+    xQueueSendFromISR(mainQueue, &command, NULL);
+}
+
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
@@ -49,6 +58,13 @@ extern "C" void app_main(void) {
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+    // Coisas do sensor de fim de curso
+    gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);
+    gpio_pulldown_en(PIN_END_STOP);
+    gpio_set_intr_type(PIN_END_STOP, GPIO_INTR_POSEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(PIN_END_STOP, handle_end_stop, NULL);
 
     Mqtt mqtt;
     StepMotor motor;
@@ -102,24 +118,33 @@ extern "C" void app_main(void) {
         }
 
         switch (command.type) {
+        case T_NONE:
+            break;
         case T_MAX_HEIGHT:
-            // setar altura máxima do motor
+            ESP_LOGW(tag_main_control, "Set MAX height");
             break;
 
         case T_MIN_HEIGHT:
-            // setar altura mínima do motor
+            ESP_LOGW(tag_main_control, "Set MIN height");
             break;
 
         case T_ON_OFF:
-            // ON
-            // ligar motor
-            // ligar compressor
-
+            if (command.value == ON) {
+                ESP_LOGI(tag_main_control, "Step motor start");
+                // if (motor.state != RUNNING)
+                motor.start();
+                // ligar compressor
+            }
             // OFF
-            // desligar motor
-            // desligar compressor
+            else {
+                ESP_LOGI(tag_main_control, "Step motor stop");
+                motor.stop();
+                // desligar compressor
+            }
             break;
-        case T_NONE:
+
+        case T_VELOCITY:
+            motor.set_speed(command.value);
             break;
 
         default:
