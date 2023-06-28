@@ -17,7 +17,7 @@ void Mqtt::start() {
     mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
     mqtt_cfg.broker.address.port      = 8080;
 
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    client = esp_mqtt_client_init(&mqtt_cfg);
 
     esp_mqtt_client_register_event(
         client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, handle_event, this);
@@ -42,6 +42,7 @@ void Mqtt::handle_event(void* handler_args, esp_event_base_t base, int32_t event
         msg_id = esp_mqtt_client_subscribe(client, TOPIC_SOLENOID, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
+        // FIXME: não sei precisa inscrever num tópico pra publicar nele
         // msg_id = esp_mqtt_client_subscribe(client, TOPIC_SENSORS, 1);
         // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
@@ -81,9 +82,8 @@ void Mqtt::handle_event(void* handler_args, esp_event_base_t base, int32_t event
 }
 
 void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
-    ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-    // Por algum motivo event->topic não aponta pra um buffer
-    // com \0 no final.
+    // NOTE: Por algum motivo event->topic não aponta pra um buffer
+    // com '\0' no final. event->data também não.
     char topic[128];
     memcpy(topic, event->topic, event->topic_len);
     topic[event->topic_len] = '\0';
@@ -96,6 +96,7 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     ESP_LOGI(TAG, "data: %s", data);
 
     char command = event->data[0];
+    // NOTE: tópicos para depuração
     if (strcmp(topic, TOPIC_STEP_MOTOR) == 0) {
         if (xQueueSend(mqtt->stepMotorQueue, &command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ StepMotor Queue");
@@ -106,12 +107,18 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ Solenoid Queue");
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
-    } else if (strcmp(topic, TOPIC_GENERAL) == 0) {
-        char command = parse_command(root);
-        if (xQueueSend(mqtt->stepMotorQueue, &command, 0) == pdPASS) {
-            ESP_LOGI(TAG, "MQTT mensagem enviada p/ StepMotor Queue");
+    }
+    // NOTE: tópicos de produção
+    else if (strcmp(topic, TOPIC_GENERAL) == 0) {
+        Command command = {
+            .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
+            .value = cJSON_GetObjectItem(root, "value")->valueint,
+        };
+
+        if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+            ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
         } else
-            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ StepMotor Queue");
+            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO p/ main control loop");
     } else {
         ESP_LOGW(TAG, "Tópico não reconhecido %s", topic);
     }
@@ -119,30 +126,15 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     cJSON_Delete(root);
 }
 
-char Mqtt::parse_command(cJSON* root) {
-    char command = 0;
-    int on_off   = 0;
-    int height   = 0;
-    int value    = cJSON_GetObjectItem(root, "value")->valueint;
-    Type type    = (Type)cJSON_GetObjectItem(root, "type")->valueint;
+void Mqtt::publish(const char* topic, AllData* data) {
+    cJSON* root = cJSON_CreateObject();
 
-    switch (type) {
-    case T_ON_OFF:
-        on_off = value;
-        if (on_off == 1)
-            command = 'x';
-        else
-            command = 'z';
-        break;
-    case T_MIN_HEIGHT:
-        height = value;
-        break;
-    case T_MAX_HEIGHT:
-        height = value;
-        break;
-    default:
-        break;
-    }
+    to_json(root, data);
+    char* json_buffer = cJSON_Print(root);
+    int buffer_len    = strlen(json_buffer);
 
-    return command;
+    esp_mqtt_client_publish(client, topic, json_buffer, buffer_len, 0, 0);
+
+    free(json_buffer);
+    cJSON_Delete(root);
 }

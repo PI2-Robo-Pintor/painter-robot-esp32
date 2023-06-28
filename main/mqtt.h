@@ -8,17 +8,13 @@
 #include "freertos/task.h"
 #include "mqtt_client.h"
 
+#include "data_command.h"
 #include "low_high.h"
-
-typedef enum {
-    T_VELOCITY   = 0xC1,
-    T_MAX_HEIGHT = 0xC2,
-    T_MIN_HEIGHT = 0xC3,
-    T_ON_OFF     = 0xC4,
-} Type;
 
 class Mqtt {
 public:
+    QueueHandle_t mainQueue;
+    // Essas filas são apenas para depuração
     QueueHandle_t stepMotorQueue;
     QueueHandle_t solenoidQueue;
     QueueHandle_t sensorsQueue;
@@ -31,10 +27,11 @@ public:
 
     static void handle_event(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
     static void handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event);
-    static char parse_command(cJSON* root);
+    void publish(const char* topic, AllData* sensor_state);
 
     void start();
 
 private:
     static void log_error_if_nonzero(const char* message, int error_code);
+    esp_mqtt_client_handle_t client;
 };

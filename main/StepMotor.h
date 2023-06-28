@@ -9,6 +9,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "data_command.h"
 #include "pins.h"
 
 #define HIGH 1
@@ -50,7 +51,6 @@ private:
 
     const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
-    const int TIME_HIGH_MS = 1;
 
     int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
     float PPS       = 0;    // Pulsos por segundo
