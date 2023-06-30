@@ -101,6 +101,7 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
 
     char command = event->data[0];
     // NOTE: tópicos de produção
+
     if (strcmp(topic, TOPIC_GENERAL) == 0) {
         Command command = {
             .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
@@ -109,6 +110,7 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
 
         if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
+            // imprimir comando e valor recebido
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO p/ main control loop");
     }

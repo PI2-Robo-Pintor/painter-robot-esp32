@@ -1,12 +1,14 @@
 #pragma once
 
-#include "pins.h"
 
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+
+#include "pins.h"
+#include "data_command.h"
 
 #define HIGH 1
 #define LOW  0
@@ -20,9 +22,9 @@ public:
     void toggle();
     void test();
     void print();
-    const char* tag = "Relay";
     QueueHandle_t queue;
 
+    static const char* tag;
     bool state = false;
     bool getState();
 

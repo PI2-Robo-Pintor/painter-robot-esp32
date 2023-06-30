@@ -122,7 +122,6 @@ extern "C" void app_main(void) {
         1,
         NULL);
 
-     vTaskDelay(portMAX_DELAY);
 
 
     mqtt.publish(Mqtt::TOPIC_SENSORS, &data);
@@ -131,6 +130,7 @@ extern "C" void app_main(void) {
             .type  = (Type)0,
             .value = 0,
         };
+
         result = xQueueReceive(mainQueue, &command, 1);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
@@ -148,10 +148,6 @@ extern "C" void app_main(void) {
             ESP_LOGW(tag_main_control, "Set MIN height");
             break;
 
-        /* {
-            type: 196
-            value: 1
-        } */
         case T_ON_OFF:
             if (command.value == ON) {
                 ESP_LOGI(tag_main_control, "Step motor start");

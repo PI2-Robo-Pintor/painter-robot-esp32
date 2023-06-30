@@ -1,5 +1,6 @@
 #include "relay.h"
 
+const char* Relay::tag = "Relay";
 
 Relay::Relay(gpio_num_t pino) {
     // Defina o número do pino apropriado para o relé
@@ -67,9 +68,16 @@ void Relay::blinkLoop(void* args) {
 void Relay::control_loop_relay(void* args) {
     Relay* rel = (Relay*)args;
 
-    char command = 0;
     while (true) {
+    char command = 0;
+        Command c   = {
+                .type  = (Type)0,
+                .value = 0,
+        };
+        
+
         ESP_LOGI(rel->tag,"relay control | relay.queue %p", rel->queue);
+        ESP_LOGI(tag, "relay control 0x%02X", c.type);
         if(xQueueReceive(rel->queue, &command, portMAX_DELAY) == pdPASS) {
             if (command == 'r') {   
                 rel->on();
