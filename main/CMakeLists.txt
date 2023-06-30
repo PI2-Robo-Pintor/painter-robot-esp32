@@ -1,3 +1,9 @@
-idf_component_register(SRCS "relay.cpp" "mqtt.cpp" "StepMotor.cpp" "main.cpp"
-                           
-                        INCLUDE_DIRS ".")
+idf_component_register(
+    SRCS 
+        "data_command.cpp"
+        "mqtt.cpp"
+        "StepMotor.cpp"
+        "main.cpp"
+        "relay.cpp"
+    INCLUDE_DIRS 
+        ".")
