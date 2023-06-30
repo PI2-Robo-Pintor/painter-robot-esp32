@@ -8,7 +8,7 @@
 #include "freertos/task.h"
 #include "mqtt_client.h"
 
-#include "data_command.h"
+#include "data_command_event.h"
 #include "low_high.h"
 
 class Mqtt {
@@ -23,7 +23,9 @@ public:
     static const char* TOPIC_STEP_MOTOR;
     static const char* TOPIC_SOLENOID;
     static const char* TOPIC_SENSORS;
+
     static const char* TOPIC_GENERAL;
+    static const char* TOPIC_DATA;
 
     static void handle_event(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
     static void handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event);

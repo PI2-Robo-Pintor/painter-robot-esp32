@@ -13,4 +13,5 @@
 #define PIN_END_STOP GPIO_NUM_21
 
 // Relé
-#define PIN_RELAY_1 GPIO_NUM_1
+#define PIN_RELAY_1     GPIO_NUM_1
+#define PIN_RELAY_VALVE GPIO_NUM_21

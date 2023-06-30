@@ -19,7 +19,6 @@ StepMotor::StepMotor(void) {
 
     gpio_set_level(pin_direction, dir_state);
 
-    gptimer = NULL;
     gptimer_init();
 
     stop();
@@ -151,7 +150,7 @@ void StepMotor::control_loop(void* args) {
 bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
-    motor->counter++;
+    motor->double_the_steps++;
     motor->step_state = !motor->step_state;
     gpio_set_level(motor->pin_step, motor->step_state);
     return (high_task_awoken == pdTRUE);

@@ -9,7 +9,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "data_command.h"
+#include "data_command_event.h"
 #include "pins.h"
 
 #define HIGH 1
@@ -35,9 +35,9 @@ public:
     void set_direction(int dir);
 
     static const char* tag;
-    bool step_state = 0;
-    bool dir_state  = UP;
-    int counter     = 0;
+    bool step_state      = 0;
+    bool dir_state       = UP;
+    int double_the_steps = 0;
 
     gpio_num_t pin_direction;
     gpio_num_t pin_step;

@@ -104,7 +104,15 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
             .value = cJSON_GetObjectItem(root, "value")->valueint,
         };
 
-        if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+        EventCommand event_command = {
+            .type    = T_COMMAND,
+            .command = {
+                .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
+                .value = cJSON_GetObjectItem(root, "value")->valueint,
+            }};
+
+        // if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+        if (xQueueSend(mqtt->mainQueue, &event_command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO p/ main control loop");

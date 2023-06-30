@@ -120,9 +120,15 @@ extern "C" void app_main(void) {
         }
 
         if (ec.type == T_EVENT) {
-
+            switch (ec.type) {
+            case E_REACHED_LOWER_END_STOP_SENSOR:
+                ESP_LOGI(tag_main_control, "E_REACHED_LOWER_END_STOP_SENSOR");
+                break;
+            default:
+                break;
+            }
         } else {
-            switch (command.type) {
+            switch (ec.command.type) {
             case T_NONE:
                 break;
             case T_MAX_HEIGHT:
@@ -166,11 +172,6 @@ extern "C" void app_main(void) {
 }
 
 void handle_end_stop(void* args) {
-    // Command command = {
-    //     .type  = T_ON_OFF,
-    //     .value = 0,
-    // };
-
     EventCommand event;
     event.type       = T_EVENT;
     event.event.type = E_REACHED_LOWER_END_STOP_SENSOR;
