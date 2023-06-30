@@ -19,12 +19,7 @@ StepMotor::StepMotor(void) {
 
     gpio_set_level(pin_direction, dir_state);
 
-    meioPeriodo = 1000;
-    PPS         = 0;
-    sentido     = true;
-    PPR         = 200;
-    voltas      = 3;
-    gptimer     = NULL;
+    gptimer = NULL;
     gptimer_init();
 
     stop();

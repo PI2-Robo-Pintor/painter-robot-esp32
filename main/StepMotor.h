@@ -58,12 +58,4 @@ private:
 
     const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
-
-    int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
-    float PPS       = 0;    // Pulsos por segundo
-    bool sentido    = true; // Variavel de sentido
-    long PPR        = 200;  // Número de passos por volta
-    long pulsos;            // Pulsos para o driver do motor
-    int voltas = 3;         // voltas do motor
-    float RPM;              // Rotacoes por minuto
 };
