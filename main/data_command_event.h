@@ -29,12 +29,18 @@ typedef struct {
     int value;
 } Command;
 
+typedef enum {
+    T_EVENT   = 1,
+    T_COMMAND = 2,
+} T;
+
 typedef struct {
+    int type;
     union {
         Event event;
         Command command;
     };
-} EventOrCommand;
+} EventCommand;
 
 // Atuador ou sensor
 typedef enum {
