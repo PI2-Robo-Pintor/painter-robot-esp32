@@ -2,6 +2,7 @@
 
 const char* Mqtt::TAG              = "Mqtt";
 const char* Mqtt::TOPIC_SENSORS    = "pi2/sensors";
+const char* Mqtt::TOPIC_DATA       = "pi2/data";
 const char* Mqtt::TOPIC_STEP_MOTOR = "pi2/step-motor";
 const char* Mqtt::TOPIC_SOLENOID   = "pi2/solenoid";
 const char* Mqtt::TOPIC_GENERAL    = "pi2/general";
