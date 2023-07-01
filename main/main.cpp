@@ -71,7 +71,7 @@ extern "C" void app_main(void) {
      */
     // ESP_ERROR_CHECK(example_connect());
 
-    WifiConfig wifiConfig;
+    WifiStart();
 
     // Coisas do sensor de fim de curso
     gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);

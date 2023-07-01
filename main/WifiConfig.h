@@ -2,30 +2,20 @@
 
 #include "driver/gpio.h"
 
+#include "esp_event.h"
 #include "esp_log.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "freertos/task.h"
-class WifiConfig
-{
-private:
-    void eventHandler(void* arguments, 
-                 esp_event_base_t eventBase,
-                 int32_t eventId,
-                 void* eventData);
+
+#define WIFI_SSID           "AndroidAP1FDB"
+#define WIFI_PASSWORD       "vmds9571"
+#define WIFI_CONN_MAX_RETRY 6
+#define WIFI_CONNECTED_BIT  BIT0
+#define WIFI_FAIL_BIT       BIT1
+
+static void eventHandler(void* arguments, 
+                  esp_event_base_t eventBase,
+                  int32_t eventId,
+                  void* eventData);
     
-    int m_connectTries = 0;
-    EventGroupHandle_t m_wifiEventGroup;
 
-public:
-    WifiConfig(/* args */);
-    ~WifiConfig() = default;
-
-    void WifiStart();
-};
-
-
-WifiConfig::~WifiConfig()
-{
-}
+void WifiStart();
