@@ -95,20 +95,10 @@ extern "C" void app_main(void) {
         0);
 
     BaseType_t result = 0;
-    AllData data      = {
-             .device = D_STEP_MOTOR,
-             .relay  = {
-                  .value = 1,
-                  .id    = RID_COMPRESSOR,
-        },
-    };
 
-    mqtt.publish(Mqtt::TOPIC_SENSORS, &data);
     while (true) {
+        EventCommand ec = event_command_reset();
 
-        EventCommand ec = {0};
-
-        // result = xQueueReceive(mainQueue, &command, 10);
         result = xQueueReceive(mainQueue, &ec, 10);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
