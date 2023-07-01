@@ -79,7 +79,7 @@ void StepMotor::set_speed(int speed) {
 void StepMotor::set_direction(int dir) {
     this->dir_state = dir;
     gpio_set_level(this->pin_direction, this->dir_state);
-    ESP_LOGI(tag, "invertendo sentido de deslocamento");
+    ESP_LOGI(tag, "invertendo sentido de deslocamento %d", this->dir_state);
 }
 
 void StepMotor::control_loop(void* args) {

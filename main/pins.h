@@ -18,4 +18,4 @@
 
 // Relé
 #define PIN_RELAY_1 GPIO_NUM_19
-#define PIN_RELAY_2 GPIO_NUM_23
+#define PIN_RELAY_2 GPIO_NUM_22
