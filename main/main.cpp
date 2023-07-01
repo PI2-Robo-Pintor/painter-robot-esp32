@@ -31,6 +31,7 @@
 static const char* TAG              = "PI2-Robo-Pintor";
 static const char* tag_main_control = "Main loop control";
 
+
 static void IRAM_ATTR handle_end_stop(void* args) {
     Command command = {
         .type  = T_ON_OFF,
@@ -59,17 +60,6 @@ extern "C" void app_main(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
-    
-
-
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    // ESP_ERROR_CHECK(example_connect());
 
     WifiStart();
 
