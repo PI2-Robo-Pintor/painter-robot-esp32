@@ -105,10 +105,6 @@ extern "C" void app_main(void) {
 
     mqtt.publish(Mqtt::TOPIC_SENSORS, &data);
     while (true) {
-        Command command = {
-            .type  = (Type)0,
-            .value = 0,
-        };
 
         EventCommand ec = {0};
 
@@ -128,7 +124,8 @@ extern "C" void app_main(void) {
                 break;
             }
         } else {
-            switch (ec.command.type) {
+            Command command = ec.command;
+            switch (command.type) {
             case T_NONE:
                 break;
             case T_MAX_HEIGHT:
@@ -156,6 +153,12 @@ extern "C" void app_main(void) {
 
             case T_VELOCITY:
                 motor.set_speed(command.value);
+                break;
+
+            case T_INVERT:
+                motor.dir_state = !motor.dir_state;
+                ESP_LOGI(tag_main_control, "Step motor inverted to %d", motor.dir_state);
+                motor.set_direction(motor.dir_state);
                 break;
 
             default:
