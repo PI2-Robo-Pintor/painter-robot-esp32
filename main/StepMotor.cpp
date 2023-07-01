@@ -89,13 +89,11 @@ void StepMotor::control_loop(void* args) {
 
     while (true) {
         counter++;
-        char command = 0;
-        Command c    = {
-               .type  = (Type)0,
-               .value = 0,
+        Command c = {
+            .type  = T_NONE,
+            .value = 0,
         };
 
-        // BaseType_t result = xQueueReceive(motor->queue, &command, portMAX_DELAY);
         BaseType_t result = xQueueReceive(motor->queue, &c, portMAX_DELAY);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
