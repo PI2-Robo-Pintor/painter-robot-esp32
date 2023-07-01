@@ -1,18 +1,17 @@
 #pragma once
 
-
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "data_command_event.h"
 #include "pins.h"
-#include "data_command.h"
 
 #define HIGH 1
 #define LOW  0
-//how to use relay module - define class
+// how to use relay module - define class
 
 class Relay {
 public:

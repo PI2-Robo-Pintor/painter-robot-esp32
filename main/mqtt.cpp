@@ -2,6 +2,7 @@
 
 const char* Mqtt::TAG              = "Mqtt";
 const char* Mqtt::TOPIC_SENSORS    = "pi2/sensors";
+const char* Mqtt::TOPIC_DATA       = "pi2/data";
 const char* Mqtt::TOPIC_STEP_MOTOR = "pi2/step-motor";
 const char* Mqtt::TOPIC_SOLENOID   = "pi2/solenoid";
 const char* Mqtt::TOPIC_RELAY      = "pi2/relay";
@@ -15,8 +16,10 @@ void Mqtt::log_error_if_nonzero(const char* message, int error_code) {
 
 void Mqtt::start() {
     esp_mqtt_client_config_t mqtt_cfg = {};
-    mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
-    mqtt_cfg.broker.address.port      = 8080;
+    // mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
+    // mqtt_cfg.broker.address.port      = 8080;
+    mqtt_cfg.broker.address.uri  = "ws://192.168.1.101";
+    mqtt_cfg.broker.address.port = 9883;
 
     client = esp_mqtt_client_init(&mqtt_cfg);
 
@@ -103,12 +106,16 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     // NOTE: tópicos de produção
 
     if (strcmp(topic, TOPIC_GENERAL) == 0) {
-        Command command = {
-            .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
-            .value = cJSON_GetObjectItem(root, "value")->valueint,
-        };
 
-        if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+        EventCommand event_command = {
+            .type    = T_COMMAND,
+            .command = {
+                .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
+                .value = cJSON_GetObjectItem(root, "value")->valueint,
+            }};
+
+        // if (xQueueSend(mqtt->mainQueue, &command, 0) == pdPASS) {
+        if (xQueueSend(mqtt->mainQueue, &event_command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ main control loop");
             // imprimir comando e valor recebido
         } else
