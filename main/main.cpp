@@ -22,6 +22,7 @@
 
 #include "low_high.h"
 #include "StepMotor.h"
+#include "WifiConfig.h"
 #include "data_command.h"
 #include "mqtt.h"
 #include "queue.h"
@@ -51,7 +52,16 @@ extern "C" void app_main(void) {
     esp_log_level_set("TRANSPORT", ESP_LOG_VERBOSE);
     esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
 
-    ESP_ERROR_CHECK(nvs_flash_init());
+    esp_err_t response = nvs_flash_init();
+    if ((response == ESP_ERR_NVS_NO_FREE_PAGES) ||
+        (response == ESP_ERR_NVS_NEW_VERSION_FOUND) )
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+    
+
+
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
@@ -59,7 +69,9 @@ extern "C" void app_main(void) {
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    ESP_ERROR_CHECK(example_connect());
+    // ESP_ERROR_CHECK(example_connect());
+
+    WifiConfig wifiConfig;
 
     // Coisas do sensor de fim de curso
     gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);

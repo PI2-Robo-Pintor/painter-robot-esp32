@@ -15,8 +15,8 @@
 #include "lwip/sys.h"
 
 
-#define WIFI_SSID="myssid"
-#define WIFI_PASSWORD="mypassword"
+#define WIFI_SSID ="AndroidAP1FDB"
+#define WIFI_PASSWORD = "vmds9571"
 #define WIFI_CONN_MAX_RETRY=6
 
 #define TAG "Wifi"
