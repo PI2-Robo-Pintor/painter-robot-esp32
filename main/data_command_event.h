@@ -22,6 +22,7 @@ typedef enum {
     T_MAX_HEIGHT = 0xC2, // Altura em centímetros
     T_MIN_HEIGHT = 0xC3, // Altura em centímetros
     T_ON_OFF     = 0xC4, // 0 desligado, 1 ligado
+    T_INVERT     = 0xC5, // inverte direção do deslocamento. NÃO deve ser usado em produção
 } Type;
 
 typedef struct {
