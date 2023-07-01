@@ -103,47 +103,6 @@ void StepMotor::control_loop(void* args) {
         }
 
         ESP_LOGI(tag, "control: command 0x%02X", c.type);
-
-        // Apenas comandos de debug
-        if (command == 'x') {
-            motor->state = RUNNING;
-            gpio_set_level(GPIO_NUM_2, HIGH);
-            // FIXME: E se o timer já tiver começado?
-            gptimer_start(motor->gptimer);
-        } else if (command == 'z') {
-            motor->state = STOPPED;
-            gpio_set_level(GPIO_NUM_2, LOW);
-            gptimer_stop(motor->gptimer);
-        } else if (command == 'y') {
-            motor->dir_state = !motor->dir_state;
-            gpio_set_level(motor->pin_direction, motor->dir_state);
-            ESP_LOGI(tag, "invertendo sentido de deslocamento");
-        } else if ('a' <= command && command <= 'f') {
-            int step_delay                                 = 80 + (command - 'a') * 20;
-            motor->alarm_config.alarm_count                = step_delay;
-            motor->alarm_config.reload_count               = 0;
-            motor->alarm_config.flags.auto_reload_on_alarm = true;
-            gptimer_stop(motor->gptimer);
-            gptimer_set_alarm_action(motor->gptimer, &motor->alarm_config);
-            gptimer_start(motor->gptimer);
-        } else if (command == 0) {
-            ESP_LOGW(tag, "Nenhum comando");
-        } else {
-            ESP_LOGE(tag, "Comando não reconhecido: [%c]", command);
-        }
-
-        // switch (motor->state) {
-        // case RUNNING:
-        //     if (motor->prev_state != RUNNING)
-        //         gptimer_start(motor->gptimer);
-        //     break;
-        // case STOPPED:
-        //     // FIXME: tenho que rever como vai ser a atualização do estado
-        //     gptimer_stop(motor->gptimer);
-        //     break;
-        // default:
-        //     break;
-        // }
     }
 }
 
