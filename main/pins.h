@@ -1,8 +1,12 @@
 #pragma once
 
-// Motor de passo.  Esses pinos são temporários
-#define PIN_SM_DIRECTION GPIO_NUM_4
-#define PIN_SM_STEP      GPIO_NUM_5
+// #define PIN_SM_DIRECTION GPIO_NUM_4
+// #define PIN_SM_STEP      GPIO_NUM_5
+
+// FIXME: esses pinos são temporários, enquanto os anteriores não estão
+// funcionando
+#define PIN_SM_DIRECTION GPIO_NUM_23
+#define PIN_SM_STEP      GPIO_NUM_19
 
 #define PIN_SM_LED    GPIO_NUM_3
 #define PIN_SM_ENABLE GPIO_NUM_22
