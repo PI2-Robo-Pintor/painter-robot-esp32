@@ -7,6 +7,7 @@
 #define OFF 0
 
 typedef enum {
+    E_NONE                          = 0x00,
     E_REACHED_LOWER_END_STOP_SENSOR = 0xE1,
     E_REACHED_UPPER_LIMIT           = 0xE2,
 } EventType;
@@ -42,6 +43,8 @@ typedef struct {
         Command command;
     };
 } EventCommand;
+
+EventCommand event_command_reset();
 
 // Atuador ou sensor
 typedef enum {
