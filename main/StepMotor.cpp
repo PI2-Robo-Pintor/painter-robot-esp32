@@ -2,13 +2,13 @@
 
 const char* StepMotor::tag = "StepMotor";
 
-StepMotor::StepMotor(void) {
-    state = STOPPED;
+StepMotor::StepMotor()
+    : pin_direction(PIN_SM_DIRECTION),
+      pin_step(PIN_SM_STEP),
+      pin_enable(PIN_SM_ENABLE),
+      pin_led(PIN_SM_LED) {
 
-    pin_direction = PIN_SM_DIRECTION;
-    pin_step      = PIN_SM_STEP;
-    pin_led       = PIN_SM_LED;
-    pin_enable    = PIN_SM_ENABLE;
+    state = STOPPED;
 
     // Apenas teste de LED interna
     gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);

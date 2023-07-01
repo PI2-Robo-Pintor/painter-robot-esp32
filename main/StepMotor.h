@@ -39,12 +39,12 @@ public:
     bool dir_state       = UP;
     int double_the_steps = 0;
 
-    gpio_num_t pin_direction;
-    gpio_num_t pin_step;
-    gpio_num_t pin_enable;
-    gpio_num_t pin_alarm;
-    gpio_num_t pin_pend;
-    gpio_num_t pin_led;
+    const gpio_num_t pin_direction;
+    const gpio_num_t pin_step;
+    const gpio_num_t pin_enable;
+    const gpio_num_t pin_led;
+    // const gpio_num_t pin_alarm;
+    // const gpio_num_t pin_pend;
 
     QueueHandle_t queue;
     gptimer_handle_t gptimer;
