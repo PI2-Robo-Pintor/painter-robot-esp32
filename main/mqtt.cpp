@@ -15,8 +15,10 @@ void Mqtt::log_error_if_nonzero(const char* message, int error_code) {
 
 void Mqtt::start() {
     esp_mqtt_client_config_t mqtt_cfg = {};
-    mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
-    mqtt_cfg.broker.address.port      = 8080;
+    // mqtt_cfg.broker.address.uri       = "ws://test.mosquitto.org";
+    // mqtt_cfg.broker.address.port      = 8080;
+    mqtt_cfg.broker.address.uri  = "ws://192.168.1.101";
+    mqtt_cfg.broker.address.port = 9883;
 
     client = esp_mqtt_client_init(&mqtt_cfg);
 
@@ -99,10 +101,6 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
     char command = event->data[0];
     // NOTE: tópicos de produção
     if (strcmp(topic, TOPIC_GENERAL) == 0) {
-        Command command = {
-            .type  = (Type)cJSON_GetObjectItem(root, "type")->valueint,
-            .value = cJSON_GetObjectItem(root, "value")->valueint,
-        };
 
         EventCommand event_command = {
             .type    = T_COMMAND,
