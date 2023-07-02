@@ -4,28 +4,35 @@
 #include <string.h>
 
 #include "driver/gpio.h"
+
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+
 #include "mqtt_client.h"
+
 #include "nvs_flash.h"
+
 #include "protocol_examples_common.h"
 
-#include "StepMotor.h"
 #include "data_command_event.h"
 #include "low_high.h"
 #include "mqtt.h"
 #include "queue.h"
 #include "relay.h"
+#include "StepMotor.h"
+#include "WifiConfig.h"
 
 static const char* TAG              = "PI2-Robo-Pintor";
 static const char* tag_main_control = "Main loop control";
