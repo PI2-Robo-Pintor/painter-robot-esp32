@@ -5,5 +5,6 @@ idf_component_register(
         "StepMotor.cpp"
         "main.cpp"
         "relay.cpp"
+        "WifiConfig.cpp"
     INCLUDE_DIRS 
         ".")
