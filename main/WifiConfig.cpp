@@ -4,6 +4,7 @@
 #include "esp_mac.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "esp_http_server.h"
 
 #include "freertos/event_groups.h"
 #include "freertos/FreeRTOS.h"
@@ -16,6 +17,84 @@
 #include "lwip/sys.h"
 
 #define TAG "Wifi"
+
+
+// função para tratar as requisições http
+esp_err_t root_get_handler(httpd_req_t *req)
+{
+    // Escreva o conteúdo da página de configuração aqui
+    const char *resp_str = "<html>"
+                           "<head>"
+                           "<style>"
+                           "body { font-family: Arial, sans-serif; }"
+                           "h1 { color: #333; }"
+                           "form { max-width: 300px; margin: 0 auto; }"
+                           "label { display: block; margin-top: 10px; }"
+                           "input[type='text'], input[type='password'] { width: 100%; padding: 5px; margin-top: 5px; }"
+                           "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: #fff; border: none; cursor: pointer; }"
+                           "</style>"
+                           "<script>"
+                           "function submitForm() {"
+                           "  var ssid = document.getElementById('ssid').value;"
+                           "  var password = document.getElementById('password').value;"
+                           "  var xhr = new XMLHttpRequest();"
+                           "  xhr.open('POST', '/config', true);"
+                           "  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');"
+                           "  xhr.onreadystatechange = function() {"
+                           "    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {"
+                           "      // Sucesso, redirecionar para a página de confirmação"
+                           "      window.location.href = '/confirmation.html';"
+                           "    }"
+                           "  };"
+                           "  xhr.send('ssid=' + encodeURIComponent(ssid) + '&password=' + encodeURIComponent(password));"
+                           "}"
+                           "</script>"
+                           "</head>"
+                           "<body>"
+                           "<h1>Configuração Wi-Fi</h1>"
+                           "<form>"
+                           "<label for=\"ssid\">SSID:</label>"
+                           "<input type=\"text\" id=\"ssid\" name=\"ssid\">"
+                           "<label for=\"password\">Senha:</label>"
+                           "<input type=\"password\" id=\"password\" name=\"password\">"
+                           "<input type=\"button\" value=\"Salvar\" onclick=\"submitForm()\">"
+                           "</form>"
+                           "</body>"
+                           "</html>";
+
+    httpd_resp_send(req, resp_str, strlen(resp_str));
+    return ESP_OK;
+}
+
+
+
+esp_err_t config_post_handler(httpd_req_t *req)
+{
+    char buf[1000];
+    int ret, remaining = req->content_len;
+
+    while (remaining > 0) {
+        if ((ret = httpd_req_recv(req, buf, sizeof(buf))) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                continue;
+            }
+            return ESP_FAIL;
+        }
+
+        remaining -= ret;
+        // Faça o processamento dos dados recebidos aqui
+    }
+
+    // Responda com uma mensagem de sucesso
+    const char *resp_str = "<html><body><h1>Configuração salva!</h1></body></html>";
+    httpd_resp_send(req, resp_str, strlen(resp_str));
+    return ESP_OK;
+}
+
+
+
+
+
 
 static int s_connectTries = 0;
 static EventGroupHandle_t s_wifiEventGroup;
@@ -175,6 +254,31 @@ void WifiStartSoftAp()
 
     ESP_LOGI(TAG, "WifiStartSoftAp finished. SSID:%s password:%s channel:%d",
              WIFI_SSID_AP, WIFI_PASSWORD_AP, WIFI_CHANNEL);
+
+    httpd_config_t config_httpd = HTTPD_DEFAULT_CONFIG();
+    httpd_handle_t server = NULL;
+
+
+    ESP_ERROR_CHECK(httpd_start(&server, &config_httpd));
+
+    httpd_uri_t root_uri = {
+        .uri       = "/",
+        .method    = HTTP_GET,
+        .handler   = root_get_handler,
+        .user_ctx  = NULL
+    };
+
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &root_uri));
+
+    //REGISTRA O HANDLER PARA A ROTA /CONFIG
+    httpd_uri_t config_uri = {
+        .uri       = "/config",
+        .method    = HTTP_POST,
+        .handler   = config_post_handler,
+        .user_ctx  = NULL
+    };
+
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &config_uri));
 }
 
 int32_t readNVS()
