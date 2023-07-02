@@ -159,7 +159,7 @@ extern "C" void app_main(void) {
                 break;
 
             case T_VELOCITY:
-                motor.set_speed(command.value);
+                motor.set_delay(command.value);
                 break;
 
             case T_INVERT:

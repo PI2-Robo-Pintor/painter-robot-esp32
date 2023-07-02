@@ -31,13 +31,17 @@ public:
     static bool IRAM_ATTR incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data);
     void start();
     void stop();
-    void set_speed(int speed);
+    void set_delay(int speed);
     void set_direction(int dir);
+    void test_acc_cruve();
 
     static const char* tag;
     bool step_state      = 0;
     bool dir_state       = UP;
     int double_the_steps = 0;
+
+    int target_delay;
+    int initial_delay;
 
     const gpio_num_t pin_direction;
     const gpio_num_t pin_step;

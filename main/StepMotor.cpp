@@ -1,4 +1,5 @@
 #include "StepMotor.h"
+#include <stdlib.h>
 
 const char* StepMotor::tag = "StepMotor";
 
@@ -42,8 +43,10 @@ void StepMotor::gptimer_init() {
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_LOGI(tag, "Enabled step timer");
 
+    initial_delay                           = 900;
+    target_delay                            = 100;
+    alarm_config.alarm_count                = initial_delay;
     alarm_config.reload_count               = 0;
-    alarm_config.alarm_count                = 400;
     alarm_config.flags.auto_reload_on_alarm = true;
 
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
@@ -51,6 +54,9 @@ void StepMotor::gptimer_init() {
 
 void StepMotor::start() {
     this->state = RUNNING;
+
+    set_delay(initial_delay);
+
     gpio_set_level(GPIO_NUM_2, HIGH);
     gpio_set_level(pin_enable, LOW);
     // FIXME: E se o timer já tiver começado?
@@ -64,10 +70,10 @@ void StepMotor::stop() {
     gptimer_stop(this->gptimer);
 }
 
-void StepMotor::set_speed(int speed) {
+void StepMotor::set_delay(int delay) {
     // Por enquanto esse speed é um delay em microsegundos
     // int step_delay                                = 80 + (speed - 'a') * 20;
-    this->alarm_config.alarm_count                = speed;
+    this->alarm_config.alarm_count                = delay;
     this->alarm_config.reload_count               = 0;
     this->alarm_config.flags.auto_reload_on_alarm = true;
     gptimer_stop(this->gptimer);
@@ -80,6 +86,9 @@ void StepMotor::set_direction(int dir) {
     this->dir_state = dir;
     gpio_set_level(this->pin_direction, this->dir_state);
     ESP_LOGI(tag, "invertendo sentido de deslocamento %d", this->dir_state);
+}
+
+void StepMotor::test_acc_cruve() {
 }
 
 void StepMotor::control_loop(void* args) {
@@ -107,7 +116,25 @@ void StepMotor::control_loop(void* args) {
 bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
+
     motor->double_the_steps++;
+
+    if (motor->double_the_steps % 5 == 0) {
+        int delta_delay = 1;
+
+        int delay_diff = motor->target_delay - motor->alarm_config.alarm_count;
+        if (delay_diff > 0) {
+            // delta_delay = -50;
+        } else if (delay_diff < 0) {
+            delta_delay = -delta_delay;
+        }
+
+        if (delay_diff != 0) {
+            int new_delay = motor->alarm_config.alarm_count + delta_delay;
+            motor->set_delay(new_delay);
+        }
+    }
+
     motor->step_state = !motor->step_state;
     gpio_set_level(motor->pin_step, motor->step_state);
     return (high_task_awoken == pdTRUE);
