@@ -61,7 +61,7 @@ extern "C" void app_main(void) {
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    WifiStart();
+    WifiStartSta();
 
     // Coisas do sensor de fim de curso
     gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);

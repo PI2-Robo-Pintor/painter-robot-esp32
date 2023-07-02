@@ -6,16 +6,26 @@
 #include "esp_log.h"
 
 
-#define WIFI_SSID           "AndroidAP1FDB"
-#define WIFI_PASSWORD       "vmds9571"
 #define WIFI_CONN_MAX_RETRY 6
 #define WIFI_CONNECTED_BIT  BIT0
 #define WIFI_FAIL_BIT       BIT1
 
-static void eventHandler(void* arguments, 
+#define WIFI_SSID_STA   "AndroidAP1FDB"
+#define WIFI_PASSWORD_STA   "vmds9571"
+
+#define WIFI_SSID_AP    "AndroidAP1FDB"
+#define WIFI_PASSWORD_AP    "vmds9571"
+#define WIFI_CHANNEL    0
+
+
+static void eventHandlerAp(void* arg, esp_event_base_t event_base,
+                                    int32_t event_id, void* event_data);
+
+static void eventHandlerSta(void* arguments, 
                   esp_event_base_t eventBase,
                   int32_t eventId,
                   void* eventData);
     
 
-void WifiStart();
+void WifiStartSta();
+void WifiStartSoftAp();

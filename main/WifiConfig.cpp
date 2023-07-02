@@ -1,9 +1,9 @@
 #include "WifiConfig.h"
 
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-
 
 #include "freertos/event_groups.h"
 #include "freertos/FreeRTOS.h"
@@ -19,7 +19,7 @@
 static int s_connectTries = 0;
 static EventGroupHandle_t s_wifiEventGroup;
 
-static void eventHandler(void* arguments, 
+static void eventHandlerSta(void* arguments, 
                   esp_event_base_t eventBase,
                   int32_t eventId,
                   void* eventData)
@@ -70,7 +70,7 @@ static void eventHandler(void* arguments,
 
 }
 
-void WifiStart()
+void WifiStartSta()
 {
     s_wifiEventGroup = xEventGroupCreate();
 
@@ -84,13 +84,13 @@ void WifiStart()
 
     ESP_ERROR_CHECK(esp_wifi_init(&wifiConfig));
 
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,&eventHandler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,&eventHandler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,&eventHandlerSta, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,&eventHandlerSta, NULL));
 
     wifi_config_t config = {
         .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWORD
+            .ssid = WIFI_SSID_STA,
+            .password = WIFI_PASSWORD_STA
         },
         
     };
@@ -107,11 +107,11 @@ void WifiStart()
 
     if (bits & WIFI_CONNECTED_BIT)
     {
-        ESP_LOGI(TAG,"Connected to ap: SSID: %s PASSWORD: %s ",WIFI_SSID,WIFI_PASSWORD);
+        ESP_LOGI(TAG,"Connected to ap: SSID: %s PASSWORD: %s ",WIFI_SSID_STA,WIFI_PASSWORD_STA);
     }
     else if (bits & WIFI_FAIL_BIT)
     {
-        ESP_LOGI(TAG,"Failed to ap: SSID: %s PASSWORD: %s ",WIFI_SSID,WIFI_PASSWORD);
+        ESP_LOGI(TAG,"Failed to ap: SSID: %s PASSWORD: %s ",WIFI_SSID_STA,WIFI_PASSWORD_STA);
     }
     else
     {
@@ -119,4 +119,59 @@ void WifiStart()
     }
     
     vEventGroupDelete(s_wifiEventGroup);
+}
+
+
+static void eventHandlerAp(void* arg, esp_event_base_t event_base,
+                                    int32_t event_id, void* event_data)
+{
+    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    }
+}
+
+void WifiStartSoftAp()
+{
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_ap();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        &eventHandlerAp,
+                                                        NULL,
+                                                        NULL));
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = WIFI_SSID_AP,
+            .password = WIFI_PASSWORD_AP,
+            .ssid_len = strlen(WIFI_SSID_AP),
+            .channel = WIFI_CHANNEL,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+            .max_connection = WIFI_CONN_MAX_RETRY,
+            .pmf_cfg = {
+                    .required = false,
+            },
+        },
+    };
+    if (strlen(WIFI_PASSWORD_AP) == 0) {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "WifiStartSoftAp finished. SSID:%s password:%s channel:%d",
+             WIFI_SSID_AP, WIFI_PASSWORD_AP, WIFI_CHANNEL);
 }
