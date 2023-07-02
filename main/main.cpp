@@ -68,7 +68,8 @@ extern "C" void app_main(void) {
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    WifiStartSta();
+    // WifiStartSta();
+    WifiStartSoftAp();
 
     setup_end_stop_sensor();
 
@@ -194,4 +195,4 @@ void handle_end_stop(void* args) {
     event.event.type = E_REACHED_LOWER_END_STOP_SENSOR;
 
     xQueueSendFromISR(mainQueue, &event, NULL);
-}
+    }

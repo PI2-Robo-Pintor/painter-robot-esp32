@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 
 #include "nvs_flash.h"
+#include "nvs.h"
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -174,4 +175,41 @@ void WifiStartSoftAp()
 
     ESP_LOGI(TAG, "WifiStartSoftAp finished. SSID:%s password:%s channel:%d",
              WIFI_SSID_AP, WIFI_PASSWORD_AP, WIFI_CHANNEL);
+}
+
+void readNVS()
+{
+    ESP_ERROR_CHECK(nvs_flash_init);
+
+    nvs_handle partitionHandler;
+
+    esp_err_t openResponse = nvs_open("WifiStorage",NVS_READONLY,&partitionHandler);
+
+    if(openResponse == ESP_ERR_NVS_NOT_FOUND)
+    {
+        ESP_LOGE(TAG,"Namespace: WifiStorage not found");
+        return;
+    }
+
+    std::string ssid;
+    int32_t value;
+
+    // esp_err_t response = nvs_get_str(partitionHandler,"wifi_ssid",&ssid);
+    esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
+
+    switch (expression)
+    {
+    case ESP_OK:
+        s_ssid = ssid;
+        break;
+    
+    case ESP_ERR_NOT_FOUND:
+        ESP_LOGE(TAG,"SSID NOT FOUND.");
+        break;
+    default:
+        ESP_LOGE(TAG,"Error to access nvs(%s).",esp_err_to_name(response));
+        break;
+    }
+
+    nvs_close(partitionHandler);
 }

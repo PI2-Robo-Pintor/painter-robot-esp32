@@ -13,10 +13,11 @@
 #define WIFI_SSID_STA   "AndroidAP1FDB"
 #define WIFI_PASSWORD_STA   "vmds9571"
 
-#define WIFI_SSID_AP    "AndroidAP1FDB"
-#define WIFI_PASSWORD_AP    "vmds9571"
+#define WIFI_SSID_AP    "ITRAC"
+#define WIFI_PASSWORD_AP    "FG@2018UNB"
 #define WIFI_CHANNEL    0
 
+static std::string s_ssid;
 
 static void eventHandlerAp(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data);
@@ -29,3 +30,5 @@ static void eventHandlerSta(void* arguments,
 
 void WifiStartSta();
 void WifiStartSoftAp();
+
+void testNVS();
