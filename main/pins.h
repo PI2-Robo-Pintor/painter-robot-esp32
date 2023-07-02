@@ -19,3 +19,7 @@
 // Relé
 #define PIN_RELAY_1 GPIO_NUM_19
 #define PIN_RELAY_2 GPIO_NUM_23
+
+// Sensor Pressão
+#define PIN_PSENSOR_DATA GPIO_NUM_33
+#define PIN_PSENSOR_SCK GPIO_NUM_32

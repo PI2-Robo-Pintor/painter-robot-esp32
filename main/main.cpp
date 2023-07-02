@@ -22,6 +22,7 @@
 
 #include "low_high.h"
 #include "StepMotor.h"
+#include "PressureSensor.h"
 #include "data_command.h"
 #include "mqtt.h"
 #include "queue.h"
@@ -71,10 +72,11 @@ extern "C" void app_main(void) {
     Mqtt mqtt;
     StepMotor motor;
     Relay rel(PIN_RELAY_2);
+    PressureSensor sensor;
 
 
     mqttQueue      = xQueueCreate(10, sizeof(AllData));
-    mainQueue      = xQueueCreate(10, sizeof(Command));
+    mainQueue      = xQueueCreate(10, sizeof(AllData));
     stepMotorQueue = xQueueCreate(10, sizeof(Command));
     sensorsQueue   = xQueueCreate(10, sizeof(AllData));
     solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
@@ -84,6 +86,7 @@ extern "C" void app_main(void) {
         ESP_LOGE(TAG, "Failed to create Queues");
     else {
         motor.queue = stepMotorQueue;
+        sensor.queue = sensorsQueue;
 
         mqtt.stepMotorQueue = stepMotorQueue;
         mqtt.sensorsQueue   = sensorsQueue;
@@ -94,8 +97,6 @@ extern "C" void app_main(void) {
     }
 
     mqtt.start();
- 
-
     xTaskCreatePinnedToCore(
         StepMotor::control_loop,
         "Task de controle do motor",
@@ -104,6 +105,14 @@ extern "C" void app_main(void) {
         1,
         NULL,
         0);
+
+    xTaskCreate(
+        PressureSensor::measure_loop,
+        "Task de leitura de pressão",
+        2048,
+        &sensor,
+        1,
+        NULL);
 
     BaseType_t result = 0;
     AllData data      = {

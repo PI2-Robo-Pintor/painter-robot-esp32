@@ -97,8 +97,8 @@ void StepMotor::control_loop(void* args) {
         counter++;
         char command = 0;
         Command c    = {
-               .type  = (Type)0,
-               .value = 0,
+            .type  = (Type)0,
+            .value = 0,
         };
 
         // BaseType_t result = xQueueReceive(motor->queue, &command, portMAX_DELAY);

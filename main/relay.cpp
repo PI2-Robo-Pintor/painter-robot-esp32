@@ -74,21 +74,20 @@ void Relay::control_loop_relay(void* args) {
                 .type  = (Type)0,
                 .value = 0,
         };
-        
+
 
         ESP_LOGI(rel->tag,"relay control | relay.queue %p", rel->queue);
         ESP_LOGI(tag, "relay control 0x%02X", c.type);
         if(xQueueReceive(rel->queue, &command, portMAX_DELAY) == pdPASS) {
-            if (command == 'r') {   
+            if (command == 'r') {
                 rel->on();
             } else {
                 rel->off();
             }
         }
-        //ESPLOGI RELAY GETSTATE  
+        //ESPLOGI RELAY GETSTATE
         rel->print();
 
         vTaskDelay(1000 / portTICK_PERIOD_MS); // Aguarda 1 segundo
     }
-} 
-
+}
