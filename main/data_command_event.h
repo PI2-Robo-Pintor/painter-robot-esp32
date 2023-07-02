@@ -7,6 +7,7 @@
 #define OFF 0
 
 typedef enum {
+    E_NONE                          = 0x00,
     E_REACHED_LOWER_END_STOP_SENSOR = 0xE1,
     E_REACHED_UPPER_LIMIT           = 0xE2,
 } EventType;
@@ -22,6 +23,7 @@ typedef enum {
     T_MAX_HEIGHT = 0xC2, // Altura em centímetros
     T_MIN_HEIGHT = 0xC3, // Altura em centímetros
     T_ON_OFF     = 0xC4, // 0 desligado, 1 ligado
+    T_INVERT     = 0xC5, // inverte direção do deslocamento. NÃO deve ser usado em produção
 } Type;
 
 typedef struct {
@@ -29,12 +31,20 @@ typedef struct {
     int value;
 } Command;
 
+typedef enum {
+    T_EVENT   = 1,
+    T_COMMAND = 2,
+} T;
+
 typedef struct {
+    int type;
     union {
         Event event;
         Command command;
     };
-} EventOrCommand;
+} EventCommand;
+
+EventCommand event_command_reset();
 
 // Atuador ou sensor
 typedef enum {

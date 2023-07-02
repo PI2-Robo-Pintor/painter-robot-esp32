@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS 
-        "data_command.cpp"
+        "data_command_event.cpp"
         "mqtt.cpp"
         "StepMotor.cpp"
         "main.cpp"

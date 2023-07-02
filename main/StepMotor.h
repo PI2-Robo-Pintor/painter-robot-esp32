@@ -9,7 +9,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "data_command.h"
+#include "data_command_event.h"
 #include "pins.h"
 
 #define HIGH 1
@@ -35,16 +35,16 @@ public:
     void set_direction(int dir);
 
     static const char* tag;
-    bool step_state = 0;
-    bool dir_state  = UP;
-    int counter     = 0;
+    bool step_state      = 0;
+    bool dir_state       = UP;
+    int double_the_steps = 0;
 
-    gpio_num_t pin_direction;
-    gpio_num_t pin_step;
-    gpio_num_t pin_enable;
-    gpio_num_t pin_alarm;
-    gpio_num_t pin_pend;
-    gpio_num_t pin_led;
+    const gpio_num_t pin_direction;
+    const gpio_num_t pin_step;
+    const gpio_num_t pin_enable;
+    const gpio_num_t pin_led;
+    // const gpio_num_t pin_alarm;
+    // const gpio_num_t pin_pend;
 
     QueueHandle_t queue;
     gptimer_handle_t gptimer;
@@ -58,12 +58,4 @@ private:
 
     const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     // const int STEPS_PER_REVOLUTION = 800; // muda de acordo com o chaveamento
-
-    int meioPeriodo = 1000; // MeioPeriodo do pulso STEP em microsegundos F= 1/T = 1/2000 uS = 500 Hz
-    float PPS       = 0;    // Pulsos por segundo
-    bool sentido    = true; // Variavel de sentido
-    long PPR        = 200;  // Número de passos por volta
-    long pulsos;            // Pulsos para o driver do motor
-    int voltas = 3;         // voltas do motor
-    float RPM;              // Rotacoes por minuto
 };

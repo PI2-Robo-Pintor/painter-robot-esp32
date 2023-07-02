@@ -1,5 +1,14 @@
 #include "data_command_event.h"
 
+EventCommand event_command_reset() {
+    EventCommand ec;
+    ec.type          = T_NONE;
+    ec.event.type    = E_NONE;
+    ec.command.type  = T_NONE;
+    ec.command.value = 0;
+    return ec;
+}
+
 void to_json(cJSON* root, AllData* data) {
     cJSON_AddNumberToObject(root, "device", data->device);
 
