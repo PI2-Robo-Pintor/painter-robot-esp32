@@ -76,7 +76,7 @@ extern "C" void app_main(void) {
     Mqtt mqtt;
     StepMotor motor;
     Relay rel(PIN_RELAY_2);
-    PressureSensor sensor;
+    PressureSensor pressureSensor;
 
     mqttQueue      = xQueueCreate(10, sizeof(AllData));
     mainQueue      = xQueueCreate(10, sizeof(EventCommand));
@@ -89,7 +89,7 @@ extern "C" void app_main(void) {
         ESP_LOGE(TAG, "Failed to create Queues");
     else {
         motor.queue = stepMotorQueue;
-        sensor.queue = sensorsQueue;
+        pressureSensor.queue = sensorsQueue;
 
         mqtt.stepMotorQueue = stepMotorQueue;
         mqtt.sensorsQueue   = sensorsQueue;
@@ -114,7 +114,7 @@ extern "C" void app_main(void) {
         PressureSensor::measure_loop,
         "Task de leitura de pressão",
         1024,
-        &sensor,
+        &pressureSensor,
         2,
         NULL);
 

@@ -13,7 +13,7 @@ void PressureSensor::measure_loop(void* args) {
   int pressure;
 
   while (true) {
-    pressure = (int)sensor->read_count()*40/167772;
+    pressure = (int)sensor->read_count()*MAX_PRESSURE/AMP_MAX_VALUE;
     AllData data = {
       .device = D_PRESSURE,
       .pressure  = {

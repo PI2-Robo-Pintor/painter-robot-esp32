@@ -10,10 +10,10 @@
 
 #include "pins.h"
 #include "data_command_event.h"
+#include "low_high.h"
 
-#define HIGH 1
-#define LOW  0
-
+#define AMP_MAX_VALUE 167772
+#define MAX_PRESSURE 40
 
 class PressureSensor {
   public:
