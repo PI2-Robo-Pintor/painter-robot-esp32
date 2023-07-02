@@ -4,29 +4,36 @@
 #include <string.h>
 
 #include "driver/gpio.h"
+
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+
 #include "mqtt_client.h"
+
 #include "nvs_flash.h"
+
 #include "protocol_examples_common.h"
 
-#include "StepMotor.h"
 #include "PressureSensor.h"
 #include "data_command_event.h"
 #include "low_high.h"
 #include "mqtt.h"
 #include "queue.h"
 #include "relay.h"
+#include "StepMotor.h"
+#include "WifiConfig.h"
 
 static const char* TAG              = "PI2-Robo-Pintor";
 static const char* tag_main_control = "Main loop control";
@@ -54,15 +61,15 @@ extern "C" void app_main(void) {
     esp_log_level_set("TRANSPORT", ESP_LOG_VERBOSE);
     esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
 
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_err_t response = nvs_flash_init();
+    if ((response == ESP_ERR_NVS_NO_FREE_PAGES) ||
+        (response == ESP_ERR_NVS_NEW_VERSION_FOUND) )
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
 
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
+    WifiStartSta();
 
     setup_end_stop_sensor();
 

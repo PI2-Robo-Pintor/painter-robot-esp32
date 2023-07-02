@@ -6,5 +6,6 @@ idf_component_register(
         "main.cpp"
         "PressureSensor.cpp"
         "relay.cpp"
-    INCLUDE_DIRS
+        "WifiConfig.cpp"
+    INCLUDE_DIRS 
         ".")
