@@ -45,11 +45,7 @@ void Mqtt::handle_event(void* handler_args, esp_event_base_t base, int32_t event
 
         msg_id = esp_mqtt_client_subscribe(client, TOPIC_SOLENOID, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        // FIXME: não sei precisa inscrever num tópico pra publicar nele
-        // msg_id = esp_mqtt_client_subscribe(client, TOPIC_SENSORS, 1);
-        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
+        
         msg_id = esp_mqtt_client_subscribe(client, TOPIC_GENERAL, 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
@@ -133,6 +129,11 @@ void Mqtt::handle_event_data(Mqtt* mqtt, esp_mqtt_event_handle_t event) {
         } else
             ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Solenoid Queue");
     } else if (strcmp(topic, TOPIC_RELAY) == 0) {
+        if (xQueueSend(mqtt->relayQueue, &command, 0) == pdPASS) {
+            ESP_LOGI(TAG, "MQTT mensagem enviada p/ Relay Queue");
+        } else
+            ESP_LOGW(TAG, "FALHA MQTT mensagem NÃO enviada p/ Relay Queue");
+    } else if (strcmp(topic, TOPIC_SENSORS) == 0) {
         if (xQueueSend(mqtt->relayQueue, &command, 0) == pdPASS) {
             ESP_LOGI(TAG, "MQTT mensagem enviada p/ Relay Queue");
         } else

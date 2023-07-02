@@ -4,6 +4,7 @@ idf_component_register(
         "mqtt.cpp"
         "StepMotor.cpp"
         "main.cpp"
+        "PressureSensor.cpp"
         "relay.cpp"
         "WifiConfig.cpp"
     INCLUDE_DIRS 

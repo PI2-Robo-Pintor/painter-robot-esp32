@@ -26,6 +26,7 @@
 
 #include "protocol_examples_common.h"
 
+#include "PressureSensor.h"
 #include "data_command_event.h"
 #include "low_high.h"
 #include "mqtt.h"
@@ -75,10 +76,10 @@ extern "C" void app_main(void) {
     Mqtt mqtt;
     StepMotor motor;
     Relay rel(PIN_RELAY_2);
+    PressureSensor pressureSensor;
 
-    // mainQueue      = xQueueCreate(10, sizeof(Command));
-    mainQueue      = xQueueCreate(10, sizeof(EventCommand));
     mqttQueue      = xQueueCreate(10, sizeof(AllData));
+    mainQueue      = xQueueCreate(10, sizeof(EventCommand));
     stepMotorQueue = xQueueCreate(10, sizeof(Command));
     sensorsQueue   = xQueueCreate(10, sizeof(AllData));
     solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
@@ -88,6 +89,7 @@ extern "C" void app_main(void) {
         ESP_LOGE(TAG, "Failed to create Queues");
     else {
         motor.queue = stepMotorQueue;
+        pressureSensor.queue = sensorsQueue;
 
         mqtt.stepMotorQueue = stepMotorQueue;
         mqtt.sensorsQueue   = sensorsQueue;
@@ -107,6 +109,14 @@ extern "C" void app_main(void) {
         1,
         NULL,
         0);
+
+    xTaskCreate(
+        PressureSensor::measure_loop,
+        "Task de leitura de pressão",
+        1024,
+        &pressureSensor,
+        2,
+        NULL);
 
     BaseType_t result = 0;
 
@@ -183,6 +193,16 @@ extern "C" void app_main(void) {
 
         AllData recv_data;
         result = xQueueReceive(sensorsQueue, &recv_data, 10);
+
+        switch (recv_data.device)
+        {
+        case(D_PRESSURE):
+            // ESP_LOGI(tag_main_control, "Pressão: %d", recv_data.pressure.value);
+            mqtt.publish(Mqtt::TOPIC_SENSORS, &recv_data);
+            break;
+        default:
+            break;
+        }
 
         vTaskDelay(2 / portTICK_PERIOD_MS);
     }
