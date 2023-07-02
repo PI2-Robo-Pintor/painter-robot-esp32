@@ -191,13 +191,11 @@ void readNVS()
         return;
     }
 
-    std::string ssid;
     int32_t value;
 
-    // esp_err_t response = nvs_get_str(partitionHandler,"wifi_ssid",&ssid);
     esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
 
-    switch (expression)
+    switch (response)
     {
     case ESP_OK:
         s_ssid = ssid;
