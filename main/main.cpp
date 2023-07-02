@@ -113,9 +113,9 @@ extern "C" void app_main(void) {
     xTaskCreate(
         PressureSensor::measure_loop,
         "Task de leitura de pressão",
-        2048,
+        1024,
         &sensor,
-        1,
+        2,
         NULL);
 
     BaseType_t result = 0;
@@ -197,7 +197,7 @@ extern "C" void app_main(void) {
         switch (recv_data.device)
         {
         case(D_PRESSURE):
-            ESP_LOGI(tag_main_control, "Pressão: %d", recv_data.pressure.value);
+            // ESP_LOGI(tag_main_control, "Pressão: %d", recv_data.pressure.value);
             mqtt.publish(Mqtt::TOPIC_SENSORS, &recv_data);
             break;
         default:

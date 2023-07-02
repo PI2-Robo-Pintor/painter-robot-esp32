@@ -6,7 +6,6 @@ const char* PressureSensor::tag = "PressureSensor";
 PressureSensor::PressureSensor(void) {
   gpio_set_direction(PIN_PSENSOR_DATA, GPIO_MODE_INPUT);
   gpio_set_direction(PIN_PSENSOR_SCK, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_2, HIGH);
 }
 
 void PressureSensor::measure_loop(void* args) {
@@ -22,7 +21,6 @@ void PressureSensor::measure_loop(void* args) {
       },
     };
     xQueueSend(sensor->queue,  &data, 0);
-    ESP_LOGI(tag, "Pressão: %d", pressure);
     vTaskDelay(pdMS_TO_TICKS(1000)); // Aguarda 1 segundo
   }
 }
