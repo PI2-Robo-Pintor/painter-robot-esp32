@@ -21,14 +21,8 @@ void PressureSensor::measure_loop(void* args) {
         .value = pressure,
       },
     };
+    xQueueSend(sensor->queue,  &data, 0);
     ESP_LOGI(tag, "Pressão: %d", pressure);
-
-    if (xQueueSend(sensor->queue,  &data, 0) == pdPASS) {
-      ESP_LOGI(tag, "MQTT mensagem enviada p/ main control loop");
-      // imprimir comando e valor recebido
-    } else
-      ESP_LOGW(tag, "FALHA MQTT mensagem NÃO p/ main control loop");
-    ESP_LOGI(tag, "Pressão2: %d", pressure);
     vTaskDelay(pdMS_TO_TICKS(1000)); // Aguarda 1 segundo
   }
 }

@@ -71,9 +71,8 @@ extern "C" void app_main(void) {
     Relay rel(PIN_RELAY_2);
     PressureSensor sensor;
 
-    // mainQueue      = xQueueCreate(10, sizeof(EventCommand));
     mqttQueue      = xQueueCreate(10, sizeof(AllData));
-    mainQueue      = xQueueCreate(10, sizeof(AllData));
+    mainQueue      = xQueueCreate(10, sizeof(EventCommand));
     stepMotorQueue = xQueueCreate(10, sizeof(Command));
     sensorsQueue   = xQueueCreate(10, sizeof(AllData));
     solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
@@ -187,6 +186,16 @@ extern "C" void app_main(void) {
 
         AllData recv_data;
         result = xQueueReceive(sensorsQueue, &recv_data, 10);
+
+        switch (recv_data.device)
+        {
+        case(D_PRESSURE):
+            ESP_LOGI(tag_main_control, "Pressão: %d", recv_data.pressure.value);
+            mqtt.publish(Mqtt::TOPIC_SENSORS, &recv_data);
+            break;
+        default:
+            break;
+        }
 
         vTaskDelay(2 / portTICK_PERIOD_MS);
     }
