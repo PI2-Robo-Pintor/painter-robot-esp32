@@ -198,7 +198,7 @@ extern "C" void app_main(void) {
         {
         case(D_PRESSURE):
             // ESP_LOGI(tag_main_control, "Pressão: %d", recv_data.pressure.value);
-            mqtt.publish(Mqtt::TOPIC_SENSORS, &recv_data);
+            mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
             break;
         default:
             break;
