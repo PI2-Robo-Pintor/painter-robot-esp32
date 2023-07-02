@@ -103,14 +103,6 @@ extern "C" void app_main(void) {
 
     BaseType_t result = 0;
 
-    xTaskCreate(
-        Relay::control_loop_relay,
-        "Task de controle do relay",
-        2048,
-        &rel,
-        1,
-        NULL);
-
     while (true) {
         EventCommand ec = event_command_reset();
 
