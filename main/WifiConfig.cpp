@@ -22,47 +22,16 @@
 // função para tratar as requisições http
 esp_err_t root_get_handler(httpd_req_t *req)
 {
-    // Escreva o conteúdo da página de configuração aqui
-    const char *resp_str = "<html>"
-                           "<head>"
-                           "<style>"
-                           "body { font-family: Arial, sans-serif; }"
-                           "h1 { color: #333; }"
-                           "form { max-width: 300px; margin: 0 auto; }"
-                           "label { display: block; margin-top: 10px; }"
-                           "input[type='text'], input[type='password'] { width: 100%; padding: 5px; margin-top: 5px; }"
-                           "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: #fff; border: none; cursor: pointer; }"
-                           "</style>"
-                           "<script>"
-                           "function submitForm() {"
-                           "  var ssid = document.getElementById('ssid').value;"
-                           "  var password = document.getElementById('password').value;"
-                           "  var xhr = new XMLHttpRequest();"
-                           "  xhr.open('POST', '/config', true);"
-                           "  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');"
-                           "  xhr.onreadystatechange = function() {"
-                           "    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {"
-                           "      // Sucesso, redirecionar para a página de confirmação"
-                           "      window.location.href = '/confirmation.html';"
-                           "    }"
-                           "  };"
-                           "  xhr.send('ssid=' + encodeURIComponent(ssid) + '&password=' + encodeURIComponent(password));"
-                           "}"
-                           "</script>"
-                           "</head>"
-                           "<body>"
-                           "<h1>Configuração Wi-Fi</h1>"
-                           "<form>"
-                           "<label for=\"ssid\">SSID:</label>"
-                           "<input type=\"text\" id=\"ssid\" name=\"ssid\">"
-                           "<label for=\"password\">Senha:</label>"
-                           "<input type=\"password\" id=\"password\" name=\"password\">"
-                           "<input type=\"button\" value=\"Salvar\" onclick=\"submitForm()\">"
-                           "</form>"
-                           "</body>"
-                           "</html>";
+   // ler arquivo configwifi.html
+    extern const unsigned char conectwifi_html_start[] asm("_binary_conectwifi_html_start");
+   
+    // tamanho do arquivo configwifi.html
+    extern const unsigned char conectwifi_html_end[] asm("_binary_conectwifi_html_end");
 
-    httpd_resp_send(req, resp_str, strlen(resp_str));
+    // httpd_resp_send(req, (const char *) configwifi_html_start, configwifi_html_end - configwifi_html_start);
+    httpd_resp_send(req, (const char *) conectwifi_html_start, HTTPD_RESP_USE_STRLEN);
+
+
     return ESP_OK;
 }
 

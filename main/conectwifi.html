@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Configurar Rede Wi-Fi</title>
+  <style>
+    /* Estilos CSS para o formulário */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+    
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+      width: 90%;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+    }
+    
+    .form-group input[type="submit"] {
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 3px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+    }
+    
+    .form-group .show-password {
+      padding: 10px;
+      font-size: 10px;
+      border-radius: 1px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      float: right;
+    }
+
+
+    /* Estilo para o botão "Exibir Senha" */
+    .show-password {
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .center {
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Configurar Rede Wi-Fi</h2>
+    <form id="wifiForm">
+      <div class="form-group">
+        <label for="ssid">SSID:</label>
+        <input type="text" id="ssid" name="ssid" placeholder="Digite o nome da rede Wi-Fi" required>
+      </div>
+      <div class="form-group">
+        <label for="senha">Senha:</label>
+        <input type="password" id="senha" name="senha" placeholder="Digite a senha da rede Wi-Fi" required>
+      </div>
+      <div class="form-group right">
+        <span class="show-password" onclick="togglePasswordVisibility()">Exibir Senha</span>
+      </div>
+      <br>
+      <div class="form-group center">
+        <br> 
+        <input type="submit" value="Enviar">
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // JavaScript 
+    var form = document.getElementById('wifiForm');
+    form.addEventListener('submit', function(event) {
+      event.preventDefault(); // Evita o envio do formulário
+
+      // Obtenção dos valores dos campos
+      var ssidValue = document.getElementById('ssid').value;
+      var senhaValue = document.getElementById('senha').value;
+
+      // Exibir dos valores (apenas para demonstração)
+      console.log('SSID:', ssidValue);
+      console.log('Senha:', senhaValue);
+
+      // (enviar para um servidor)
+    });
+
+    // Função para alternar a visibilidade da senha
+    function togglePasswordVisibility() {
+      var senhaInput = document.getElementById('senha');
+      if (senhaInput.type === 'password') {
+        senhaInput.type = 'text';
+      } else {
+        senhaInput.type = 'password';
+      }
+    }
+  </script>
+</body>
+</html>

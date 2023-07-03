@@ -7,4 +7,7 @@ idf_component_register(
         "relay.cpp"
         "WifiConfig.cpp"
     INCLUDE_DIRS 
-        ".")
+        "."
+    EMBED_FILES
+        "conectwifi.html"
+        )
