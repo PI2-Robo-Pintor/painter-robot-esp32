@@ -67,7 +67,12 @@ void StepMotor::stop() {
     this->state = STOPPED;
     gpio_set_level(pin_enable, HIGH);
     gpio_set_level(GPIO_NUM_2, LOW);
+    ESP_LOGI(tag, "passos       %d", this->double_the_steps);
+    ESP_LOGI(tag, "chegou no if %d", this->chegou_no_if);
     gptimer_stop(this->gptimer);
+    double_the_steps = 0;
+    // 350121
+    // 30885
 }
 
 void StepMotor::set_delay(int delay) {
@@ -88,9 +93,6 @@ void StepMotor::set_direction(int dir) {
     ESP_LOGI(tag, "invertendo sentido de deslocamento %d", this->dir_state);
 }
 
-void StepMotor::test_acc_cruve() {
-}
-
 void StepMotor::control_loop(void* args) {
     StepMotor* motor = (StepMotor*)args;
 
@@ -103,22 +105,45 @@ void StepMotor::control_loop(void* args) {
             .value = 0,
         };
 
-        BaseType_t result = xQueueReceive(motor->queue, &c, portMAX_DELAY);
+        BaseType_t result = xQueueReceive(motor->queue, &c, 1000 / portTICK_PERIOD_MS);
         if (result != pdPASS) {
             // ESP_LOGE(tag, "Erro na fila?");
             // continue;
         }
 
+        AllData data = {
+            .device     = D_STEP_MOTOR,
+            .step_motor = {
+                .type  = SMDT_POSITION,
+                .value = motor->double_the_steps,
+            }};
+
+        xQueueSend(sensorsQueue, &data, 1);
+
         ESP_LOGI(tag, "control: command 0x%02X", c.type);
     }
+}
+
+void StepMotor::set_height_stop(int cm) {
+    height_stop = cm;
 }
 
 bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
 
-    motor->double_the_steps++;
+    // if (motor->double_the_steps + 1 >= 350121) {
+    //                                 324'312
+    if (motor->double_the_steps + 1 == 350'000 / 2) {
+        EventCommand event = event_command_reset();
+        event.type         = T_EVENT;
+        event.event.type   = E_REACHED_UPPER_LIMIT;
+        // FIXME: deveria ter prioridade máxima
+        xQueueSendFromISR(mainQueue, &event, NULL);
+        motor->chegou_no_if = true;
+    }
 
+    motor->double_the_steps++;
     if (motor->double_the_steps % 5 == 0) {
         int delta_delay = 1;
 

@@ -33,6 +33,8 @@ static const char* tag_main_control = "Main loop control";
 // A resposta dessa interrupção depende dos delays no loop principal de controle
 static void IRAM_ATTR handle_end_stop(void* args);
 
+int cm_to_steps(int cm);
+
 void setup_end_stop_sensor() {
     gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);
     gpio_pulldown_en(PIN_END_STOP);
@@ -69,7 +71,6 @@ extern "C" void app_main(void) {
     StepMotor motor;
     Relay rel(PIN_RELAY_2);
 
-    // mainQueue      = xQueueCreate(10, sizeof(Command));
     mainQueue      = xQueueCreate(10, sizeof(EventCommand));
     mqttQueue      = xQueueCreate(10, sizeof(AllData));
     stepMotorQueue = xQueueCreate(10, sizeof(Command));
@@ -113,9 +114,14 @@ extern "C" void app_main(void) {
         }
 
         if (ec.type == T_EVENT) {
-            switch (ec.type) {
+            switch (ec.event.type) {
             case E_REACHED_LOWER_END_STOP_SENSOR:
                 ESP_LOGI(tag_main_control, "E_REACHED_LOWER_END_STOP_SENSOR");
+                motor.stop();
+                break;
+            case E_REACHED_UPPER_LIMIT:
+                ESP_LOGI(tag_main_control, "E_REACHED_UPPER_LIMIT: %d passos", motor.double_the_steps);
+                motor.stop();
                 break;
             default:
                 break;
@@ -126,11 +132,13 @@ extern "C" void app_main(void) {
             case T_NONE:
                 break;
             case T_MAX_HEIGHT:
-                ESP_LOGW(tag_main_control, "Set MAX height");
+                ESP_LOGI(tag_main_control, "Set MAX height %d", command.value);
+                motor.set_height_stop(command.value);
                 break;
 
             case T_MIN_HEIGHT:
-                ESP_LOGW(tag_main_control, "Set MIN height");
+
+                ESP_LOGI(tag_main_control, "Set MIN height");
                 break;
 
             case T_ON_OFF:
@@ -169,6 +177,14 @@ extern "C" void app_main(void) {
         AllData recv_data;
         result = xQueueReceive(sensorsQueue, &recv_data, 10);
 
+        switch (recv_data.device) {
+        case D_STEP_MOTOR:
+            mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
+            break;
+        default:
+            break;
+        }
+
         vTaskDelay(2 / portTICK_PERIOD_MS);
     }
 }
@@ -179,4 +195,10 @@ void handle_end_stop(void* args) {
     event.event.type = E_REACHED_LOWER_END_STOP_SENSOR;
 
     xQueueSendFromISR(mainQueue, &event, NULL);
+}
+
+int cm_to_steps(int cm) {
+    // 1 rev->1600 steps->1cm;
+    // 350000/2/1600 = 109.375 cm é distância percorrida da base ao topo
+    return cm * StepMotor::STEPS_PER_REVOLUTION;
 }
