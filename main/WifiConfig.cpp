@@ -36,7 +36,6 @@ esp_err_t root_get_handler(httpd_req_t *req)
 }
 
 
-
 esp_err_t config_post_handler(httpd_req_t *req)
 {
     char buf[1000];
@@ -52,13 +51,35 @@ esp_err_t config_post_handler(httpd_req_t *req)
 
         remaining -= ret;
         // Faça o processamento dos dados recebidos aqui
+        // imprimir os dados recebidos
+        ESP_LOGI(TAG, "Dados recebidos: %.*s", ret, buf);
+        // salvar os dados recebidos na memória flash
+        nvs_handle_t my_handle;
+        esp_err_t err;
+        // abrir a partição nvs
+        err = nvs_open("storage", NVS_READWRITE, &my_handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Erro ao abrir a partição nvs");
+        }
+        // gravar os dados recebidos na partição nvs
+        err = nvs_set_str(my_handle, "wifi_config", buf);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Erro ao gravar os dados na partição nvs");
+        }
+        // fechar a partição nvs
+        nvs_close(my_handle);
+    
     }
 
-    // Responda com uma mensagem de sucesso
-    const char *resp_str = "<html><body><h1>Configuração salva!</h1></body></html>";
+    // Responda com uma mensagem de sucesso e a página atualizada
+    const char *resp_str = "<html><body><h1>Configuração salva!</h1><p>As informações foram enviadas com sucesso.</p>";
+    // Acrescente aqui o conteúdo HTML da página que deseja carregar após o envio
+
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, resp_str, strlen(resp_str));
     return ESP_OK;
 }
+
 
 
 
