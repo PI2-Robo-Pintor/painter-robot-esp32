@@ -70,9 +70,6 @@ void StepMotor::stop() {
     ESP_LOGI(tag, "passos       %d", this->double_the_steps);
     ESP_LOGI(tag, "chegou no if %d", this->chegou_no_if);
     gptimer_stop(this->gptimer);
-    double_the_steps = 0;
-    // 350121
-    // 30885
 }
 
 void StepMotor::set_delay(int delay) {
@@ -87,9 +84,12 @@ void StepMotor::set_delay(int delay) {
     gptimer_start(this->gptimer);
 }
 
-void StepMotor::set_direction(int dir) {
+void StepMotor::set_direction(MotorDirection dir) {
     this->dir_state = dir;
-    gpio_set_level(this->pin_direction, this->dir_state);
+    if (dir == D_UP)
+        gpio_set_level(this->pin_direction, HIGH);
+    else
+        gpio_set_level(this->pin_direction, LOW);
     ESP_LOGI(tag, "invertendo sentido de deslocamento %d", this->dir_state);
 }
 
@@ -119,8 +119,6 @@ void StepMotor::control_loop(void* args) {
             }};
 
         xQueueSend(sensorsQueue, &data, 1);
-
-        ESP_LOGI(tag, "control: command 0x%02X", c.type);
     }
 }
 
@@ -132,9 +130,8 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
 
-    // if (motor->double_the_steps + 1 >= 350121) {
-    //                                 324'312
-    if (motor->double_the_steps + 1 == 350'000 / 2) {
+    const int upper_paintable_limit = 350'000;
+    if (motor->double_the_steps + 1 == upper_paintable_limit) {
         EventCommand event = event_command_reset();
         event.type         = T_EVENT;
         event.event.type   = E_REACHED_UPPER_LIMIT;
@@ -142,14 +139,19 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
         xQueueSendFromISR(mainQueue, &event, NULL);
         motor->chegou_no_if = true;
     }
+    if (motor->double_the_steps - 1 == 0) {
+    }
 
-    motor->double_the_steps++;
+    if (motor->dir_state == UP) {
+        motor->double_the_steps++;
+    } else
+        motor->double_the_steps--;
+
     if (motor->double_the_steps % 5 == 0) {
         int delta_delay = 1;
 
         int delay_diff = motor->target_delay - motor->alarm_config.alarm_count;
         if (delay_diff > 0) {
-            // delta_delay = -50;
         } else if (delay_diff < 0) {
             delta_delay = -delta_delay;
         }

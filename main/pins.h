@@ -1,10 +1,5 @@
 #pragma once
 
-// #define PIN_SM_DIRECTION GPIO_NUM_4
-// #define PIN_SM_STEP      GPIO_NUM_5
-
-// FIXME: esses pinos são temporários, enquanto os anteriores não estão
-// funcionando
 #define PIN_SM_DIRECTION GPIO_NUM_23
 #define PIN_SM_STEP      GPIO_NUM_19
 
@@ -14,7 +9,7 @@
 #define PIN_SM_ALARM  GPIO_NUM_8
 
 // Sensor de fimde curso
-#define PIN_END_STOP GPIO_NUM_21
+#define PIN_END_STOP GPIO_NUM_14
 
 // Relé
 #define PIN_RELAY_1 GPIO_NUM_19

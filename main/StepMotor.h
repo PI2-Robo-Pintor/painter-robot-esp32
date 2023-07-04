@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "data_command_event.h"
 #include "pins.h"
@@ -24,6 +25,11 @@ typedef enum {
     TEST,
 } MotorState;
 
+typedef enum {
+    D_UP   = +1,
+    D_DOWN = -1,
+} MotorDirection;
+
 #define UP   true
 #define DOWN false
 
@@ -36,20 +42,20 @@ public:
     void start();
     void stop();
     void set_delay(int speed);
-    void set_direction(int dir);
+    void set_direction(MotorDirection dir);
     void set_height_stop(int dir);
 
     static const char* tag;
-    bool chegou_no_if    = false;
-    bool step_state      = 0;
-    bool dir_state       = UP;
-    int double_the_steps = 0;
+    bool chegou_no_if        = false;
+    bool step_state          = 0;
+    MotorDirection dir_state = D_UP;
+    int double_the_steps     = 0;
     int height_stop;
 
     int target_delay;
     int initial_delay;
 
-    static const int STEPS_PER_REVOLUTION = 1600; // muda de acordo com o chaveamento
+    static const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     const gpio_num_t pin_direction;
     const gpio_num_t pin_step;
     const gpio_num_t pin_enable;

@@ -37,7 +37,7 @@ int cm_to_steps(int cm);
 
 void setup_end_stop_sensor() {
     gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);
-    gpio_pulldown_en(PIN_END_STOP);
+    gpio_pullup_en(PIN_END_STOP);
     gpio_set_intr_type(PIN_END_STOP, GPIO_INTR_POSEDGE);
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_END_STOP, handle_end_stop, NULL);
@@ -64,8 +64,6 @@ extern "C" void app_main(void) {
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
-
-    setup_end_stop_sensor();
 
     Mqtt mqtt;
     StepMotor motor;
@@ -103,6 +101,7 @@ extern "C" void app_main(void) {
         0);
 
     BaseType_t result = 0;
+    // setup_end_stop_sensor();
 
     while (true) {
         EventCommand ec = event_command_reset();
@@ -144,17 +143,14 @@ extern "C" void app_main(void) {
             case T_ON_OFF:
                 if (command.value == ON) {
                     ESP_LOGI(tag_main_control, "Step motor start");
-                    // if (motor.state != RUNNING)
                     motor.start();
                     rel.on();
-                    // ligar compressor
                 }
                 // OFF
                 else {
                     ESP_LOGI(tag_main_control, "Step motor stop");
                     motor.stop();
                     rel.off();
-                    // desligar compressor
                 }
                 break;
 
@@ -163,7 +159,11 @@ extern "C" void app_main(void) {
                 break;
 
             case T_INVERT:
-                motor.dir_state = !motor.dir_state;
+                if (motor.dir_state == D_UP)
+                    motor.dir_state = D_DOWN;
+                else
+                    motor.dir_state = D_UP;
+
                 ESP_LOGI(tag_main_control, "Step motor inverted to %d", motor.dir_state);
                 motor.set_direction(motor.dir_state);
                 break;
@@ -197,8 +197,9 @@ void handle_end_stop(void* args) {
     xQueueSendFromISR(mainQueue, &event, NULL);
 }
 
+// 348'400
 int cm_to_steps(int cm) {
     // 1 rev->1600 steps->1cm;
-    // 350000/2/1600 = 109.375 cm é distância percorrida da base ao topo
+    // 350000/2/1600 = 109.375 cm é a ~distância percorrida da base ao topo
     return cm * StepMotor::STEPS_PER_REVOLUTION;
 }
