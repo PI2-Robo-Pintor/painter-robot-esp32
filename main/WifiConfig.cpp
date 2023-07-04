@@ -18,6 +18,8 @@
 
 #define TAG "Wifi"
 
+static int s_connectTries = 0;
+static EventGroupHandle_t s_wifiEventGroup;
 
 // função para tratar as requisições http
 esp_err_t root_get_handler(httpd_req_t *req)
@@ -53,21 +55,30 @@ esp_err_t config_post_handler(httpd_req_t *req)
         // Faça o processamento dos dados recebidos aqui
         // imprimir os dados recebidos
         ESP_LOGI(TAG, "Dados recebidos: %.*s", ret, buf);
-        // salvar os dados recebidos na memória flash
-        nvs_handle_t my_handle;
-        esp_err_t err;
-        // abrir a partição nvs
-        err = nvs_open("storage", NVS_READWRITE, &my_handle);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Erro ao abrir a partição nvs");
+
+        int8_t ssidSize = 0;
+        int8_t passwordSize = 0;
+
+        char ssidTemp[] = "ffffffffffffffffffff";
+        char passwordTemp[] = "ffffffffffffffffffff";
+
+        for (; ssidSize < 20; ssidSize++)
+        {
+            if(buf[ssidSize] == '&')
+            {
+                ssidTemp[ssidSize] = '\0';
+                break;
+            }
+            ssidTemp[ssidSize] = buf[ssidSize];
         }
-        // gravar os dados recebidos na partição nvs
-        err = nvs_set_str(my_handle, "wifi_config", buf);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Erro ao gravar os dados na partição nvs");
-        }
-        // fechar a partição nvs
-        nvs_close(my_handle);
+        
+        char* ssidFinal = (char*) malloc(ssidSize * sizeof(char));
+
+        ssidFinal = ssidTemp;
+
+        writeNVSStr(ssidFinal);
+        char* valueString = "test";
+        valueString = readNVS();
     
     }
 
@@ -80,14 +91,6 @@ esp_err_t config_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-
-
-
-
-
-
-static int s_connectTries = 0;
-static EventGroupHandle_t s_wifiEventGroup;
 
 static void eventHandlerSta(void* arguments, 
                   esp_event_base_t eventBase,
@@ -271,7 +274,7 @@ void WifiStartSoftAp()
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &config_uri));
 }
 
-int32_t readNVS()
+char* readNVS()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
 
@@ -279,38 +282,43 @@ int32_t readNVS()
 
     esp_err_t openResponse = nvs_open("WifiStorage",NVS_READONLY,&partitionHandler);
 
+    char* valueString = (char*)malloc(sizeof(char) * 20);
+
     if(openResponse == ESP_ERR_NVS_NOT_FOUND)
     {
         ESP_LOGE(TAG,"Namespace: WifiStorage not found");
-        return -1;
+        valueString[0] = 'f';
+        return valueString;
     }
 
-    int32_t value;
+    // int32_t value;
 
-    esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
+    // esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
+    size_t len;
+    esp_err_t response = nvs_get_str(partitionHandler,"testStr",valueString,&len);
 
     switch (response)
     {
     case ESP_OK:
-        printf("Value was read %ld",value);
-        ESP_LOGI(TAG,"Value was read %ld",value);
+        printf("Value was read %s",valueString);
+        ESP_LOGI(TAG,"Value was read %s",valueString);
         break;
     
     case ESP_ERR_NOT_FOUND:
         ESP_LOGE(TAG,"SSID NOT FOUND.");
-        value = -1;
+        valueString[0] = 'f';
         break;
     default:
         ESP_LOGE(TAG,"Error to access nvs(%s).",esp_err_to_name(response));
-        value = -1;
+        valueString[0] = 'f';
         break;
     }
 
     nvs_close(partitionHandler);
-    return value;
+    return valueString;
 }
 
-void writeNVS(int32_t value)
+void writeNVSStr(char* valueStr)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
 
@@ -324,7 +332,7 @@ void writeNVS(int32_t value)
 
     }
 
-    esp_err_t response = nvs_set_i32(partitionHandler,"testNum",value + 1);
+    esp_err_t response = nvs_set_str(partitionHandler,"testStr",valueStr);
 
     if(response != ESP_OK)
     {

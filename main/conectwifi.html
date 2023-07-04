@@ -130,7 +130,9 @@
     
   
       // Envio dos dados do formulário
-      var data = 'ssid=' + encodeURIComponent(ssidValue) + '& senha=' + encodeURIComponent(senhaValue);
+      // var data = 'ssid=' + encodeURIComponent(ssidValue) + '& senha=' + encodeURIComponent(senhaValue);
+      var data = encodeURIComponent(ssidValue) + '&' + encodeURIComponent(senhaValue); 
+
       xhr.send(data);
     });
   

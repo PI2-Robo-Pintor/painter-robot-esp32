@@ -31,5 +31,5 @@ static void eventHandlerSta(void* arguments,
 void WifiStartSta();
 void WifiStartSoftAp();
 
-int32_t readNVS();
-void writeNVS(int32_t value);
+char* readNVS();
+void writeNVSStr(char* valueStr);
