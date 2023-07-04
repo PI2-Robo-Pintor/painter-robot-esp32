@@ -65,7 +65,7 @@ public:
     // const gpio_num_t pin_pend;
 
     QueueHandle_t queue;
-    gptimer_handle_t gptimer;
+    gptimer_handle_t step_timer;
     gptimer_alarm_config_t alarm_config;
 
 private:

@@ -78,10 +78,10 @@ void StepMotor::set_delay(int delay) {
     this->alarm_config.alarm_count                = delay;
     this->alarm_config.reload_count               = 0;
     this->alarm_config.flags.auto_reload_on_alarm = true;
-    gptimer_stop(this->gptimer);
-    gptimer_set_alarm_action(this->gptimer, &this->alarm_config);
+    gptimer_stop(this->step_timer);
+    gptimer_set_alarm_action(this->step_timer, &this->alarm_config);
     // Não necessariamente eu preciso mudar a velocidade agr
-    gptimer_start(this->gptimer);
+    gptimer_start(this->step_timer);
 }
 
 void StepMotor::set_direction(MotorDirection dir) {
