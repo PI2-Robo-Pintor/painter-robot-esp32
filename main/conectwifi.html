@@ -136,8 +136,11 @@
       };
       
       // Envio dos dados do formulário
-      var data = 'ssid=' + encodeURIComponent(ssidValue) + '&senha=' + encodeURIComponent(senhaValue);
-      xhr.send(data);
+      var datassid = encodeURIComponent(ssidValue);
+      var datassenha = encodeURIComponent(senhaValue);
+
+      xhr.send(datassid + "\n" + datassenha + "\n");
+      
     });
   
     // Função para alternar a visibilidade da senha
