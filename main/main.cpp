@@ -31,17 +31,8 @@ static const char* TAG              = "PI2-Robo-Pintor";
 static const char* tag_main_control = "Main loop control";
 
 // A resposta dessa interrupção depende dos delays no loop principal de controle
-static void IRAM_ATTR handle_end_stop(void* args);
 
 int cm_to_steps(int cm);
-
-void setup_end_stop_sensor() {
-    gpio_set_direction(PIN_END_STOP, GPIO_MODE_INPUT);
-    gpio_pullup_en(PIN_END_STOP);
-    gpio_set_intr_type(PIN_END_STOP, GPIO_INTR_POSEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(PIN_END_STOP, handle_end_stop, NULL);
-};
 
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
@@ -187,14 +178,6 @@ extern "C" void app_main(void) {
 
         vTaskDelay(2 / portTICK_PERIOD_MS);
     }
-}
-
-void handle_end_stop(void* args) {
-    EventCommand event;
-    event.type       = T_EVENT;
-    event.event.type = E_REACHED_LOWER_END_STOP_SENSOR;
-
-    xQueueSendFromISR(mainQueue, &event, NULL);
 }
 
 // 348'400
