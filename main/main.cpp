@@ -92,7 +92,11 @@ extern "C" void app_main(void) {
         0);
 
     BaseType_t result = 0;
-    // setup_end_stop_sensor();
+
+    setup_end_stop_sensor();
+
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // motor.start();
 
     while (true) {
         EventCommand ec = event_command_reset();
@@ -108,6 +112,12 @@ extern "C" void app_main(void) {
             case E_REACHED_LOWER_END_STOP_SENSOR:
                 ESP_LOGI(tag_main_control, "E_REACHED_LOWER_END_STOP_SENSOR");
                 motor.stop();
+                reenable_end_stop_sensor();
+                break;
+            case E_JUST_RELEASED_END_STOP_SENSOR:
+                ESP_LOGI(tag_main_control, "RELEASED");
+                motor.stop();
+                reenable_end_stop_sensor();
                 break;
             case E_REACHED_UPPER_LIMIT:
                 ESP_LOGI(tag_main_control, "E_REACHED_UPPER_LIMIT: %d passos", motor.double_the_steps);

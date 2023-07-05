@@ -8,8 +8,9 @@
 
 typedef enum {
     E_NONE                          = 0x00,
-    E_REACHED_LOWER_END_STOP_SENSOR = 0xE1,
-    E_REACHED_UPPER_LIMIT           = 0xE2,
+    E_JUST_PRESSED_END_STOP_SENSOR  = 0xE1,
+    E_JUST_RELEASED_END_STOP_SENSOR = 0xE2,
+    E_REACHED_UPPER_LIMIT           = 0xE3,
 } EventType;
 
 typedef struct {

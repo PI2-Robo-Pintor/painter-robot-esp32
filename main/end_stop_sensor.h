@@ -6,8 +6,11 @@
 #include "freertos/queue.h"
 
 #include "data_command_event.h"
+#include "low_high.h"
 #include "pins.h"
 
 void setup_end_stop_sensor();
 
-static void IRAM_ATTR handle_end_stop(void* args);
+void init_read_end_stop_timer();
+
+void reenable_end_stop_sensor();
