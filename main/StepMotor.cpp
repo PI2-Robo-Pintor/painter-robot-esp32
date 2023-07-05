@@ -20,27 +20,29 @@ StepMotor::StepMotor()
 
     gpio_set_level(pin_direction, dir_state);
 
+    // gptimer_init(step_timer, incomplete_step);
     gptimer_init();
 
     stop();
 }
 
 void StepMotor::gptimer_init() {
+    // void StepMotor::gptimer_init(gptimer_handle_t timer, gptimer_alarm_cb_t callback) {
     ESP_LOGI(tag, "Create timer handle");
-    gptimer = NULL;
+    step_timer = NULL;
     gptimer_config_t timer_config;
     timer_config.clk_src       = GPTIMER_CLK_SRC_DEFAULT;
     timer_config.direction     = GPTIMER_COUNT_UP;
     timer_config.resolution_hz = 1000000; // 1MHz, 1 tick=1us
 
-    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &step_timer));
 
     gptimer_event_callbacks_t cbs = {
         .on_alarm = incomplete_step,
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, this));
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(step_timer, &cbs, this));
 
-    ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    ESP_ERROR_CHECK(gptimer_enable(step_timer));
     ESP_LOGI(tag, "Enabled step timer");
 
     initial_delay                           = 900;
@@ -49,7 +51,7 @@ void StepMotor::gptimer_init() {
     alarm_config.reload_count               = 0;
     alarm_config.flags.auto_reload_on_alarm = true;
 
-    ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_set_alarm_action(step_timer, &alarm_config));
 }
 
 void StepMotor::start() {
@@ -60,7 +62,7 @@ void StepMotor::start() {
     gpio_set_level(GPIO_NUM_2, HIGH);
     gpio_set_level(pin_enable, LOW);
     // FIXME: E se o timer já tiver começado?
-    gptimer_start(this->gptimer);
+    gptimer_start(this->step_timer);
 }
 
 void StepMotor::stop() {
@@ -68,8 +70,7 @@ void StepMotor::stop() {
     gpio_set_level(pin_enable, HIGH);
     gpio_set_level(GPIO_NUM_2, LOW);
     ESP_LOGI(tag, "passos       %d", this->double_the_steps);
-    ESP_LOGI(tag, "chegou no if %d", this->chegou_no_if);
-    gptimer_stop(this->gptimer);
+    gptimer_stop(this->step_timer);
 }
 
 void StepMotor::set_delay(int delay) {
@@ -137,7 +138,6 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
         event.event.type   = E_REACHED_UPPER_LIMIT;
         // FIXME: deveria ter prioridade máxima
         xQueueSendFromISR(mainQueue, &event, NULL);
-        motor->chegou_no_if = true;
     }
     if (motor->double_the_steps - 1 == 0) {
     }
@@ -147,7 +147,7 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
     } else
         motor->double_the_steps--;
 
-    if (motor->double_the_steps % 5 == 0) {
+    if (abs(motor->double_the_steps) % 5 == 0) {
         int delta_delay = 1;
 
         int delay_diff = motor->target_delay - motor->alarm_config.alarm_count;
@@ -161,6 +161,9 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
             motor->set_delay(new_delay);
         }
     }
+
+    // SS = a / 360 * f * 60
+    //  f = SS * 360 / (60 * a)
 
     motor->step_state = !motor->step_state;
     gpio_set_level(motor->pin_step, motor->step_state);

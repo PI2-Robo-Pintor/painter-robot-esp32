@@ -46,7 +46,6 @@ public:
     void set_height_stop(int dir);
 
     static const char* tag;
-    bool chegou_no_if        = false;
     bool step_state          = 0;
     MotorDirection dir_state = D_UP;
     int double_the_steps     = 0;
@@ -66,11 +65,13 @@ public:
 
     QueueHandle_t queue;
     gptimer_handle_t step_timer;
+    gptimer_handle_t acc_timer;
     gptimer_alarm_config_t alarm_config;
 
 private:
     MotorState state;
     MotorState prev_state;
 
+    // void gptimer_init(gptimer_handle_t timer, gptimer_alarm_cb_t callback);
     void gptimer_init();
 };
