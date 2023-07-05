@@ -22,6 +22,7 @@
 
 #include "StepMotor.h"
 #include "data_command_event.h"
+#include "end_stop_sensor.h"
 #include "low_high.h"
 #include "mqtt.h"
 #include "queue.h"
@@ -109,8 +110,8 @@ extern "C" void app_main(void) {
 
         if (ec.type == T_EVENT) {
             switch (ec.event.type) {
-            case E_REACHED_LOWER_END_STOP_SENSOR:
-                ESP_LOGI(tag_main_control, "E_REACHED_LOWER_END_STOP_SENSOR");
+            case E_JUST_PRESSED_END_STOP_SENSOR:
+                ESP_LOGI(tag_main_control, "PRESSED");
                 motor.stop();
                 reenable_end_stop_sensor();
                 break;
