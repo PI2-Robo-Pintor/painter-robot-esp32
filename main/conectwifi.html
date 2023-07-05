@@ -76,102 +76,100 @@
 
   </style>
 </head>
-<body>
-  <div class="container">
-    <h2>Configurar Rede Wi-Fi</h2>
-    <form id="wifiForm">
-      <div class="form-group">
-        <label for="ssid">SSID:</label>
-        <input type="text" id="ssid" name="ssid" placeholder="Digite o nome da rede Wi-Fi" required>
-      </div>
-      <div class="form-group">
-        <label for="senha">Senha:</label>
-        <input type="password" id="senha" name="senha" placeholder="Digite a senha da rede Wi-Fi" required>
+  <body>
+    <div class="container">
+      <h2>Configurar Rede Wi-Fi</h2>
+      <form id="wifiForm">
+        <div class="form-group">
+          <label for="ssid">SSID:</label>
+          <input type="text" id="ssid" name="ssid" placeholder="Digite o nome da rede Wi-Fi" required>
+        </div>
+        <div class="form-group">
+          <label for="senha">Senha:</label>
+          <input type="password" id="senha" name="senha" placeholder="Digite a senha da rede Wi-Fi" required>
+          <br>
+        </div>
+        <div class="form-group">
+          <span class="show-password" onclick="togglePasswordVisibility()">Exibir Senha</span>
+        </div>
+        <div class="form-group">
+          <input type="submit" value="Enviar">
+        </div>
         <br>
-      </div>
-      <div class="form-group">
-        <span class="show-password" onclick="togglePasswordVisibility()">Exibir Senha</span>
-      </div>
-      <div class="form-group">
-        <input type="submit" value="Enviar">
-      </div>
-      <br>
-    </form>
-  </div>
+      </form>
+    </div>
 
-  <!-- Popup oculto -->
-  <div id="popup" class="popup">
-    <h3>Credenciais enviadas com sucesso!</h3>
-    <p>SSID: <span id="popup-ssid"></span></p>
-    <p>Senha: <span id="popup-senha"></span></p>
-  </div>
+    <!-- Popup oculto -->
+    <div id="popup" class="popup">
+      <h3>Credenciais enviadas com sucesso!</h3>
+      <p>SSID: <span id="popup-ssid"></span></p>
+      <p>Senha: <span id="popup-senha"></span></p>
+    </div>
 
-  <script>
-    // JavaScript para lidar com o envio do formulário
-    var form = document.getElementById('wifiForm');
-    form.addEventListener('submit', function(event) {
-      event.preventDefault(); // Evita o envio do formulário
-      
-      // Obtenção dos valores dos campos
-      var ssidValue = document.getElementById('ssid').value;
-      var senhaValue = document.getElementById('senha').value;
-      
-      // Exibição dos valores (apenas para demonstração)
-      console.log('SSID:', ssidValue);
-      console.log('Senha:', senhaValue);
-      
-      // Criação do objeto de requisição
-      var xhr = new XMLHttpRequest();
-      var url = '/config';
-      xhr.open('POST', url, true);
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      
-      // Função de callback para manipular a resposta
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          console.log('Resposta:', xhr.responseText);
-          // Exibir o popup com as credenciais enviadas
-          showPopup(ssidValue, senhaValue);
+    <script>
+      // JavaScript para lidar com o envio do formulário
+      var form = document.getElementById('wifiForm');
+      form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Evita o envio do formulário
+        
+        // Obtenção dos valores dos campos
+        var ssidValue = document.getElementById('ssid').value;
+        var senhaValue = document.getElementById('senha').value;
+        
+        // Criação do objeto de requisição
+        var xhr = new XMLHttpRequest();
+        var url = '/config';
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        // Função de callback para manipular a resposta
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            console.log('Resposta:', xhr.responseText);
+            // Exibir o popup com as credenciais enviadas
+            showPopup(ssidValue, senhaValue);
+          }
+        };
+        
+        // Montagem dos dados JSON
+        var jsonData = JSON.stringify({
+          "ssid": ssidValue,
+          "password": senhaValue
+        });
+        
+        // Envio dos dados JSON
+        xhr.send(jsonData);
+      });
+
+    
+      // Função para alternar a visibilidade da senha
+      function togglePasswordVisibility() {
+        var senhaInput = document.getElementById('senha');
+        if (senhaInput.type === 'password') {
+          senhaInput.type = 'text';
+        } else {
+          senhaInput.type = 'password';
         }
-      };
-      
-      // Envio dos dados do formulário
-      var datassid = encodeURIComponent(ssidValue);
-      var datassenha = encodeURIComponent(senhaValue);
-
-      xhr.send(datassid + "\n" + datassenha + "\n");
-      
-    });
-  
-    // Função para alternar a visibilidade da senha
-    function togglePasswordVisibility() {
-      var senhaInput = document.getElementById('senha');
-      if (senhaInput.type === 'password') {
-        senhaInput.type = 'text';
-      } else {
-        senhaInput.type = 'password';
       }
-    }
 
-    // Função para exibir o popup com as credenciais enviadas
-    function showPopup(ssid, senha) {
-      var popup = document.getElementById('popup');
-      var popupSsid = document.getElementById('popup-ssid');
-      var popupSenha = document.getElementById('popup-senha');
-      
-      // Preencher o conteúdo do popup com as credenciais
-      popupSsid.textContent = ssid;
-      popupSenha.textContent = senha;
-      
-      // Exibir o popup
-      popup.style.display = 'block';
-      
-      // Fechar o popup após 3 segundos (3000 milissegundos)
-      setTimeout(function() {
-        popup.style.display = 'none';
-      }, 3000);
-    }
-  </script>
-  
-</body>
+        // Função para exibir o popup com as credenciais enviadas
+      function showPopup(ssidValue, senhaValue) {
+        var popup = document.getElementById('popup');
+        var popupSsid = document.getElementById('popup-ssid');
+        var popupSenha = document.getElementById('popup-senha');
+
+        // Preencher o conteúdo do popup com as credenciais
+        popupSsid.textContent = ssidValue;
+        popupSenha.textContent = senhaValue;
+
+        // Exibir o popup
+        popup.classList.add('show');
+
+        // Fechar o popup após 3 segundos (3000 milissegundos)
+        setTimeout(function() {
+          popup.classList.remove('show');
+        }, 5000);
+      }
+    </script> 
+  </body>
 </html>
