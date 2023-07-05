@@ -10,8 +10,8 @@
 #define WIFI_CONNECTED_BIT  BIT0
 #define WIFI_FAIL_BIT       BIT1
 
-#define WIFI_SSID_STA   "AndroidAP1FDB"
-#define WIFI_PASSWORD_STA   "vmds9571"
+#define WIFI_SSID_STA   "Serafins"
+#define WIFI_PASSWORD_STA   "30365697"
 
 #define WIFI_SSID_AP    "robopintor"
 #define WIFI_PASSWORD_AP    "12345678"

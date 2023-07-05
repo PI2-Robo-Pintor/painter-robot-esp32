@@ -68,8 +68,8 @@ extern "C" void app_main(void) {
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    // WifiStartSta();
-    WifiStartSoftAp();
+    // WifiStartSoftAp();
+    WifiStartSta();
 
     setup_end_stop_sensor();
 

@@ -25,6 +25,9 @@
 static int s_connectTries = 0;
 static EventGroupHandle_t s_wifiEventGroup;
 
+char* flashSSID; 
+char* flashPassword; 
+
 // função para tratar as requisições http
 esp_err_t root_get_handler(httpd_req_t *req)
 {
@@ -82,20 +85,19 @@ esp_err_t config_post_handler(httpd_req_t *req)
         // Gravar no NVS
        writeNVS(ssidValue, passwordValue);
        // LER DO NVS E IMPRIMIR LOGI DO SSID E PASSWORD
-        char* ssidRead;
-        char* senhaRead;
-        readNVS(&ssidRead, &senhaRead);
+   
+        readNVS(&flashSSID, &flashPassword);
 
-        if (ssidRead != NULL) {
-            ESP_LOGI(TAG, "NVS - SSID: %s", ssidRead);
-            free(ssidRead);
+        if (flashSSID != NULL) {
+            ESP_LOGI(TAG, "NVS - SSID: %s", flashSSID);
+            // free(flashSSID);
         } else {
             ESP_LOGE(TAG, "Failed to read SSID from NVS.");
         }
 
-        if (senhaRead != NULL) {
-            ESP_LOGI(TAG, "NVS - Password: %s", senhaRead);
-            free(senhaRead);
+        if (flashPassword != NULL) {
+            ESP_LOGI(TAG, "NVS - Password: %s", flashPassword);
+            // free(flashPassword);
         } else {
             ESP_LOGE(TAG, "Failed to read password from NVS.");
         }
@@ -175,13 +177,46 @@ void WifiStartSta()
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,&eventHandlerSta, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,&eventHandlerSta, NULL));
 
-    wifi_config_t config = {
+    
+     uint8_t setSSID[32];
+
+     for (size_t i = 0; i < strlen(flashSSID); i++)
+     {
+        setSSID[i] = flashSSID[i];
+     }
+     
+     
+    
+     uint8_t setPassword[64];
+
+     for (size_t i = 0; i < strlen(flashPassword); i++)
+     {
+        setPassword[i] = flashPassword[i];
+     }
+
+
+    // wifi_config_t config;
+
+    // for (size_t i = 0; i < strlen(flashSSID); i++)
+    //  {
+    //     config.sta.ssid[i] = flashSSID[i];
+    //  }
+     
+    //  for (size_t i = 0; i < strlen(flashPassword); i++)
+    //  {
+    //     config.sta.password[i] = flashPassword[i];
+    //  }
+
+   wifi_config_t config = {
         .sta = {
             .ssid = WIFI_SSID_STA,
             .password = WIFI_PASSWORD_STA
         },
         
     };
+
+    // ESP_LOGE(TAG, "SSID DEPOIS DE COPIAR CAMPO A CAMPO %s",config.sta.ssid);
+    // ESP_LOGE(TAG, "SENHA DEPOIS DE COPIAR CAMPO A CAMPO %s",config.sta.password);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA,&config));
