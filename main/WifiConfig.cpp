@@ -1,5 +1,9 @@
 #include "WifiConfig.h"
 
+#include <cJSON.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_system.h"
@@ -38,7 +42,7 @@ esp_err_t root_get_handler(httpd_req_t *req)
 }
 
 
-esp_err_t config_post_handler(httpd_req_t *req)
+esp_err_t config_post_handler(httpd_req_t *req) 
 {
     char buf[1000];
     int ret, remaining = req->content_len;
@@ -52,42 +56,53 @@ esp_err_t config_post_handler(httpd_req_t *req)
         }
 
         remaining -= ret;
-        // Faça o processamento dos dados recebidos aqui
-        // imprimir os dados recebidos
-        ESP_LOGI(TAG, "Dados recebidos: %.*s", ret, buf);
-
-        int8_t ssidSize = 0;
-        int8_t passwordSize = 0;
-
-        char ssidTemp[] = "ffffffffffffffffffff";
-        char passwordTemp[] = "ffffffffffffffffffff";
-
-        for (; ssidSize < 20; ssidSize++)
-        {
-            if(buf[ssidSize] == '&')
-            {
-                ssidTemp[ssidSize] = '\0';
-                break;
-            }
-            ssidTemp[ssidSize] = buf[ssidSize];
+        // Processar os dados recebidos aqui
+        cJSON *json = cJSON_Parse(buf);
+        if (json == NULL) {
+            ESP_LOGE(TAG, "Falha ao analisar JSON");
+            return ESP_FAIL;
         }
-        
-        char* ssidFinal = (char*) malloc(ssidSize * sizeof(char));
 
-        ssidFinal = ssidTemp;
+        cJSON *ssid = cJSON_GetObjectItem(json, "ssid");
+        cJSON *password = cJSON_GetObjectItem(json, "password");
 
-        writeNVSStr(ssidFinal);
-        char* valueString = "test";
-        valueString = readNVS();
-    
-    }
+        if (ssid == NULL || password == NULL) {
+            ESP_LOGE(TAG, "Campos 'ssid' ou 'password' ausentes no JSON");
+            cJSON_Delete(json);
+            return ESP_FAIL;
+        }
 
-    // Responda com uma mensagem de sucesso e a página atualizada
-    const char *resp_str = "<html><body><h1>Configuração salva!</h1><p>As informações foram enviadas com sucesso.</p>";
-    // Acrescente aqui o conteúdo HTML da página que deseja carregar após o envio
+        const char *ssidValue = ssid->valuestring;
+        const char *passwordValue = password->valuestring;
+        //imprimir os valores recebidos
+        ESP_LOGI(TAG, "ssid: %s", ssidValue);
+        ESP_LOGI(TAG, "password: %s", passwordValue);
 
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, resp_str, strlen(resp_str));
+
+        // Gravar no NVS
+       writeNVS(ssidValue, passwordValue);
+       // LER DO NVS E IMPRIMIR LOGI DO SSID E PASSWORD
+        char* ssidRead;
+        char* senhaRead;
+        readNVS(&ssidRead, &senhaRead);
+
+        if (ssidRead != NULL) {
+            ESP_LOGI(TAG, "NVS - SSID: %s", ssidRead);
+            free(ssidRead);
+        } else {
+            ESP_LOGE(TAG, "Failed to read SSID from NVS.");
+        }
+
+        if (senhaRead != NULL) {
+            ESP_LOGI(TAG, "NVS - Password: %s", senhaRead);
+            free(senhaRead);
+        } else {
+            ESP_LOGE(TAG, "Failed to read password from NVS.");
+        }
+
+                cJSON_Delete(json);
+            }
+
     return ESP_OK;
 }
 
@@ -274,70 +289,113 @@ void WifiStartSoftAp()
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &config_uri));
 }
 
-char* readNVS()
-{
-    ESP_ERROR_CHECK(nvs_flash_init());
+void readNVS(char** ssidRead, char** senhaRead) {
+    esp_err_t err = nvs_flash_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize NVS");
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
+    }
 
     nvs_handle partitionHandler;
-
-    esp_err_t openResponse = nvs_open("WifiStorage",NVS_READONLY,&partitionHandler);
-
-    char* valueString = (char*)malloc(sizeof(char) * 20);
-
-    if(openResponse == ESP_ERR_NVS_NOT_FOUND)
-    {
-        ESP_LOGE(TAG,"Namespace: WifiStorage not found");
-        valueString[0] = 'f';
-        return valueString;
+    err = nvs_open("WifiStorage", NVS_READONLY, &partitionHandler);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS namespace. Error: %s", esp_err_to_name(err));
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
     }
 
-    // int32_t value;
+    size_t len = 0;
+    err = nvs_get_str(partitionHandler, "ssid", NULL, &len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SSID length from NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
+    }
 
-    // esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
-    size_t len;
-    esp_err_t response = nvs_get_str(partitionHandler,"testStr",valueString,&len);
-
-    switch (response)
-    {
-    case ESP_OK:
-        printf("Value was read %s",valueString);
-        ESP_LOGI(TAG,"Value was read %s",valueString);
-        break;
     
-    case ESP_ERR_NOT_FOUND:
-        ESP_LOGE(TAG,"SSID NOT FOUND.");
-        valueString[0] = 'f';
-        break;
-    default:
-        ESP_LOGE(TAG,"Error to access nvs(%s).",esp_err_to_name(response));
-        valueString[0] = 'f';
-        break;
+
+    char* ssidValue = (char*)malloc(len + 1); // Alocar memória para o SSID lido
+    err = nvs_get_str(partitionHandler, "ssid", ssidValue, &len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read SSID from NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        free(ssidValue);
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
     }
 
+    len = 0;
+    err = nvs_get_str(partitionHandler, "senha", NULL, &len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get senha length from NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        free(ssidValue);
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
+    }
+
+            char* senhaValue = (char*)malloc(len + 1); // Alocar memória para a senha lida
+    err = nvs_get_str(partitionHandler, "senha", senhaValue, &len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read senha from NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        free(ssidValue);
+        free(senhaValue);
+        *ssidRead = NULL;
+        *senhaRead = NULL;
+        return;
+    }
+
+    ESP_LOGI(TAG, "SSID - LIDA: %s", ssidValue);
+    ESP_LOGI(TAG, "SENHA - LIDA: %s", senhaValue);
     nvs_close(partitionHandler);
-    return valueString;
+
+    *ssidRead = ssidValue;
+    *senhaRead = senhaValue;
 }
 
-void writeNVSStr(char* valueStr)
-{
-    ESP_ERROR_CHECK(nvs_flash_init());
 
-    nvs_handle partitionHandler;
 
-    esp_err_t openResponse = nvs_open("WifiStorage",NVS_READWRITE,&partitionHandler);
-
-    if(openResponse == ESP_ERR_NVS_NOT_FOUND)
-    {
-        ESP_LOGE(TAG,"Namespace: WifiStorage not found");
-
+void writeNVS(const char* ssid, const char* senha) {
+    esp_err_t err = nvs_flash_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize NVS");
+        return;
     }
 
-    esp_err_t response = nvs_set_str(partitionHandler,"testStr",valueStr);
+    nvs_handle partitionHandler;
+    err = nvs_open("WifiStorage", NVS_READWRITE, &partitionHandler);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS namespace. Error: %s", esp_err_to_name(err));
+        return;
+    }
 
-    if(response != ESP_OK)
-    {
-        ESP_LOGE(TAG,"Error to write nvs(%s).",esp_err_to_name(response));
+    err = nvs_set_str(partitionHandler, "ssid", ssid);
+    ESP_LOGI(TAG, "SSID - GRAVADA: %s", ssid);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write SSID to NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        return;
+    }
 
+    err = nvs_set_str(partitionHandler, "senha", senha);
+    ESP_LOGI(TAG, "SENHA - GRAVADA: %s", senha);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write senha to NVS. Error: %s", esp_err_to_name(err));
+        nvs_close(partitionHandler);
+        return;
+    }
+
+    err = nvs_commit(partitionHandler);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to commit changes to NVS. Error: %s", esp_err_to_name(err));
     }
 
     nvs_close(partitionHandler);
