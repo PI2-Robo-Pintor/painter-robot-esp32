@@ -11,6 +11,7 @@ typedef enum {
     E_JUST_PRESSED_END_STOP_SENSOR  = 0xE1,
     E_JUST_RELEASED_END_STOP_SENSOR = 0xE2,
     E_REACHED_UPPER_LIMIT           = 0xE3,
+    E_REACHED_TARGET_STEP           = 0xE4,
 } EventType;
 
 typedef struct {
