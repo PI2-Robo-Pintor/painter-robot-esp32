@@ -12,6 +12,9 @@ static const TickType_t THRESHOLD = 20;
 
 gptimer_handle_t read_end_stop_timer = NULL;
 
+// Outra altenativa: a primeira interrupção desabilita a interrupção logo
+// no começo do handler.
+
 void setup_end_stop_sensor();
 
 static bool IRAM_ATTR end_stop_reader_handler(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
