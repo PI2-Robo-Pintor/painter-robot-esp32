@@ -6,7 +6,7 @@ const char* StepMotor::tag = "StepMotor";
 StepMotor::StepMotor()
     : pin_direction(PIN_SM_DIRECTION),
       pin_step(PIN_SM_STEP),
-      pin_enable(PIN_SM_ENABLE),
+      //   pin_enable(PIN_SM_ENABLE),
       pin_led(PIN_SM_LED) {
 
     state = STOPPED;
@@ -16,7 +16,7 @@ StepMotor::StepMotor()
 
     gpio_set_direction(pin_direction, GPIO_MODE_OUTPUT);
     gpio_set_direction(pin_step, GPIO_MODE_OUTPUT);
-    gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(pin_enable, GPIO_MODE_OUTPUT);
 
     gpio_set_level(pin_direction, dir_state);
 
@@ -46,7 +46,7 @@ void StepMotor::gptimer_init() {
     ESP_LOGI(tag, "Enabled step timer");
 
     initial_delay                           = 900;
-    target_delay                            = 100;
+    target_delay                            = 200;
     alarm_config.alarm_count                = initial_delay;
     alarm_config.reload_count               = 0;
     alarm_config.flags.auto_reload_on_alarm = true;
@@ -59,23 +59,18 @@ void StepMotor::start() {
 
     set_delay(initial_delay);
 
-    gpio_set_level(GPIO_NUM_2, HIGH);
-    gpio_set_level(pin_enable, LOW);
     // FIXME: E se o timer já tiver começado?
     gptimer_start(this->step_timer);
 }
 
 void StepMotor::stop() {
     this->state = STOPPED;
-    gpio_set_level(pin_enable, HIGH);
-    gpio_set_level(GPIO_NUM_2, LOW);
-    ESP_LOGI(tag, "passos       %d", this->double_the_steps);
     gptimer_stop(this->step_timer);
 }
 
 void StepMotor::set_delay(int delay) {
     // Por enquanto esse speed é um delay em microsegundos
-    // int step_delay                                = 80 + (speed - 'a') * 20;
+    this->target_delay                            = delay;
     this->alarm_config.alarm_count                = delay;
     this->alarm_config.reload_count               = 0;
     this->alarm_config.flags.auto_reload_on_alarm = true;
@@ -88,9 +83,9 @@ void StepMotor::set_delay(int delay) {
 void StepMotor::set_direction(MotorDirection dir) {
     this->dir_state = dir;
     if (dir == D_UP)
-        gpio_set_level(this->pin_direction, HIGH);
-    else
         gpio_set_level(this->pin_direction, LOW);
+    else
+        gpio_set_level(this->pin_direction, HIGH);
     ESP_LOGI(tag, "invertendo sentido de deslocamento %d", this->dir_state);
 }
 
@@ -123,13 +118,40 @@ void StepMotor::control_loop(void* args) {
     }
 }
 
-void StepMotor::set_height_stop(int cm) {
-    height_stop = cm;
+// void StepMotor::set_lower_target_position(int pos) {
+//     lower_limit_position = pos;
+// }
+
+// void StepMotor::set_upper_target_position(int pos) {
+//     upper_limit_position = pos;
+// }
+
+void StepMotor::go_to(int target_pos) {
+    int current_position  = double_the_steps / 2;
+    this->target_position = target_pos;
+
+    if (target_pos == current_position)
+        return;
+
+    if (target_pos < current_position) {
+        set_direction(D_DOWN);
+    } else // target_steps > current_steps
+        set_direction(D_UP);
+
+    start();
 }
 
 bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
+
+    int current_position = motor->double_the_steps / 2;
+    if (current_position == motor->target_position) {
+        EventCommand event = event_command_reset();
+        event.type         = T_EVENT;
+        event.event.type   = E_REACHED_TARGET_POSITION;
+        xQueueSendFromISR(mainQueue, &event, NULL);
+    }
 
     const int upper_paintable_limit = 350'000;
     if (motor->double_the_steps + 1 == upper_paintable_limit) {
@@ -138,8 +160,6 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
         event.event.type   = E_REACHED_UPPER_LIMIT;
         // FIXME: deveria ter prioridade máxima
         xQueueSendFromISR(mainQueue, &event, NULL);
-    }
-    if (motor->double_the_steps - 1 == 0) {
     }
 
     if (motor->dir_state == UP) {

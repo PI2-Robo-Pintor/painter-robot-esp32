@@ -43,13 +43,14 @@ public:
     void stop();
     void set_delay(int speed);
     void set_direction(MotorDirection dir);
-    void set_height_stop(int dir);
+    void set_target_position(int steps);
+    void go_to(int target_steps);
 
     static const char* tag;
     bool step_state          = 0;
     MotorDirection dir_state = D_UP;
     int double_the_steps     = 0;
-    int height_stop;
+    int target_position      = 0;
 
     int target_delay;
     int initial_delay;
@@ -57,7 +58,7 @@ public:
     static const int STEPS_PER_REVOLUTION = 400; // muda de acordo com o chaveamento
     const gpio_num_t pin_direction;
     const gpio_num_t pin_step;
-    const gpio_num_t pin_enable;
+    // const gpio_num_t pin_enable;
     const gpio_num_t pin_led;
 
     // const gpio_num_t pin_alarm;

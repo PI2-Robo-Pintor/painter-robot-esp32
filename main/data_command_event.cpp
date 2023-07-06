@@ -25,6 +25,12 @@ void to_json(cJSON* root, AllData* data) {
     case D_PRESSURE:
         cJSON_AddNumberToObject(root, "value", data->pressure.value);
         break;
+
+    case D_ROBOT:
+        cJSON_AddNumberToObject(root, "type", data->robot.type);
+        cJSON_AddNumberToObject(root, "value", data->robot.value);
+        break;
+
     default:
         ESP_LOGW("to_json", "Device not recognized 0x%X", data->device);
         break;

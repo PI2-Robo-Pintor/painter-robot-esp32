@@ -11,7 +11,7 @@ typedef enum {
     E_JUST_PRESSED_END_STOP_SENSOR  = 0xE1,
     E_JUST_RELEASED_END_STOP_SENSOR = 0xE2,
     E_REACHED_UPPER_LIMIT           = 0xE3,
-    E_REACHED_TARGET_STEP           = 0xE4,
+    E_REACHED_TARGET_POSITION       = 0xE4,
 } EventType;
 
 typedef struct {
@@ -27,6 +27,7 @@ typedef enum {
     T_ON_OFF          = 0xC4, // 0 desligado, 1 ligado
     T_INVERT          = 0xC5, // inverte direção do deslocamento. NÃO deve ser usado em produção
     T_TEST_COMPONENTS = 0xC6, // testa motor, compressor,
+    T_CONFIRM_HEIGHTS = 0xC7, // Causa o motor ir pra posição inicial
 } Type;
 
 typedef struct {
@@ -88,6 +89,7 @@ typedef enum {
     RDT_NONE       = 0x00,
     RDT_COMPRESSOR = 0xB1,
     RDT_MOTOR      = 0xB2,
+    RDT_READY      = 0xB3,
 } RobotDataType;
 
 typedef struct {
@@ -102,6 +104,7 @@ typedef struct {
         RelayData relay;
         PressureData pressure;
         StepMotorData step_motor;
+        RobotData robot;
     };
 } AllData;
 
