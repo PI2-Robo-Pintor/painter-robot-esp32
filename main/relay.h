@@ -7,11 +7,8 @@
 #include "freertos/task.h"
 
 #include "data_command_event.h"
+#include "low_high.h"
 #include "pins.h"
-
-#define HIGH 1
-#define LOW  0
-// how to use relay module - define class
 
 class Relay {
 public:
