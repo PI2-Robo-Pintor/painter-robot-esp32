@@ -161,6 +161,15 @@ static void eventHandlerSta(void* arguments,
 
 }
 
+char* convert_ssid_to_char(const char* ssid)
+{
+    char* converted_ssid = (char*)malloc(32 * sizeof(char));
+
+    strncpy(converted_ssid, ssid, 32);
+
+    return converted_ssid;
+}
+
 void WifiStartSta()
 {
     s_wifiEventGroup = xEventGroupCreate();
@@ -197,7 +206,7 @@ void WifiStartSta()
          ESP_LOGE(TAG, "Failed to read password from NVS.");
     }
 
-     uint8_t setSSID[32];
+     char setSSID[32];
 
      for (size_t i = 0; i < strlen(flashSSID); i++)
      {
@@ -206,7 +215,7 @@ void WifiStartSta()
      
      
     
-     uint8_t setPassword[64];
+     char setPassword[64];
 
      for (size_t i = 0; i < strlen(flashPassword); i++)
      {
@@ -223,7 +232,7 @@ void WifiStartSta()
         config.sta.ssid[i] = 0;
         
      }
-     
+
     for (i = 0; i < 64; i++)
      {
         config.sta.password[i] = 0;
@@ -233,16 +242,27 @@ void WifiStartSta()
     for ( i = 0; i < strlen(flashSSID); i++)
      {
         config.sta.ssid[i] = flashSSID[i];
+        
+        if(config.sta.ssid[i] == '.')
+        {
+            config.sta.ssid[i] = 0;
+            break;
+        }
      }
      
      
      for ( i = 0; i < strlen(flashPassword); i++)
      {
         config.sta.password[i] = flashPassword[i];
+        
+        if(config.sta.password[i] == '.')
+        {
+            config.sta.password[i] = 0;
+            break;
+        }
      }
 
      
-
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA,&config));
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -255,7 +275,7 @@ void WifiStartSta()
 
     if (bits & WIFI_CONNECTED_BIT)
     {
-        ESP_LOGI(TAG,"Connected to ap: SSID: %s PASSWORD: %s ",setSSID,setPassword);
+        ESP_LOGI(TAG,"Connected to ap: SSID: %s PASSWORD: %s ",config.sta.ssid,config.sta.password);
     }
     else if (bits & WIFI_FAIL_BIT)
     {
