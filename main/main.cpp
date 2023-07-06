@@ -35,6 +35,8 @@ static const char* tag_main_control = "Main loop control";
 
 int cm_to_steps(int cm);
 
+void find_initial_position(void* args);
+
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
@@ -94,10 +96,10 @@ extern "C" void app_main(void) {
 
     BaseType_t result = 0;
 
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
     setup_end_stop_sensor();
 
-    // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // motor.start();
+    find_initial_position(&motor);
 
     while (true) {
         EventCommand ec = event_command_reset();
@@ -196,4 +198,60 @@ int cm_to_steps(int cm) {
     // 1 rev->1600 steps->1cm;
     // 350000/2/1600 = 109.375 cm é a ~distância percorrida da base ao topo
     return cm * StepMotor::STEPS_PER_REVOLUTION;
+}
+
+// Vai descendo até encontrar acionar o fim de curso.
+void find_initial_position(void* args) {
+    const char* tag = "Find HOME";
+    ESP_LOGI(tag, "started");
+
+    StepMotor* motor = (StepMotor*)args;
+    motor->set_direction(D_DOWN);
+    motor->start();
+    motor->set_delay(500);
+
+    bool pressed_end_stop  = false;
+    bool released_end_stop = false;
+
+    while (true) {
+        EventCommand event_command = event_command_reset();
+        xQueueReceive(mainQueue, &event_command, portMAX_DELAY);
+
+        ESP_LOGI(tag, "event_command %d", event_command.type);
+        ESP_LOGI(tag, "event_command %d", event_command.command.type);
+        ESP_LOGI(tag, "event_command %d", event_command.command.value);
+        if (event_command.type != T_EVENT) {
+            ESP_LOGW(tag, "Should've received an event");
+            continue;
+        }
+
+        switch (event_command.event.type) {
+        case E_JUST_PRESSED_END_STOP_SENSOR:
+            reenable_end_stop_sensor();
+            ESP_LOGI(tag, "PRESSED end stop");
+            pressed_end_stop = true;
+            motor->stop();
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            motor->set_direction(D_UP);
+            motor->start();
+            break;
+
+        case E_JUST_RELEASED_END_STOP_SENSOR:
+            reenable_end_stop_sensor();
+            ESP_LOGI(tag, "RELEASED end stop");
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            motor->stop();
+            released_end_stop       = true;
+            motor->double_the_steps = 0;
+            break;
+
+        default:
+            ESP_LOGW(tag, "Should've not have received this event: 0x%02X", event_command.event.type);
+            break;
+        }
+
+        if (pressed_end_stop && released_end_stop) {
+            return;
+        }
+    }
 }
