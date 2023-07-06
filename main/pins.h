@@ -23,3 +23,8 @@
 // Sensor Pressão
 #define PIN_PSENSOR_DATA GPIO_NUM_33
 #define PIN_PSENSOR_SCK GPIO_NUM_32
+
+// RGB LED
+#define PIN_LED_G GPIO_NUM_25
+#define PIN_LED_R GPIO_NUM_26
+#define PIN_LED_Y GPIO_NUM_27

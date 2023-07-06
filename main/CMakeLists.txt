@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS 
+    SRCS
         "data_command_event.cpp"
         "mqtt.cpp"
         "StepMotor.cpp"
@@ -7,5 +7,6 @@ idf_component_register(
         "PressureSensor.cpp"
         "relay.cpp"
         "WifiConfig.cpp"
-    INCLUDE_DIRS 
+        "SystemStateLed.cpp"
+    INCLUDE_DIRS
         ".")
