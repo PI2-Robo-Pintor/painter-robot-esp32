@@ -100,7 +100,7 @@ extern "C" void app_main(void) {
     }
 
     rel.off();
-    relay_valve.off();
+    relay_valve.on();
 
     mqtt.start();
 
@@ -116,9 +116,9 @@ extern "C" void app_main(void) {
     BaseType_t result = 0;
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    // setup_end_stop_sensor();
+    setup_end_stop_sensor();
 
-    // find_initial_position(&motor);
+    find_initial_position(&motor);
 
     while (true) {
         EventCommand ec = event_command_reset();
@@ -148,6 +148,8 @@ extern "C" void app_main(void) {
             case E_REACHED_UPPER_LIMIT:
                 motor.stop();
                 ESP_LOGI(MAIN_LOOP, "E_REACHED UPPER LIMIT: %d 2*passos", motor.double_the_steps / 2);
+                motor.set_direction(D_DOWN);
+                motor.start();
                 break;
             case E_REACHED_TARGET_POSITION:
                 ESP_LOGI(MAIN_LOOP, "E_REACHED TARGET POSITION: %d passos", motor.double_the_steps / 2);
@@ -160,12 +162,11 @@ extern "C" void app_main(void) {
                     mqtt.publish(Mqtt::TOPIC_DATA, &data);
                 }
 
-                // TODO: if is_painting => rel.off(); relay_valve.off();
+                // TODO: if is_painting => rel.off(); relay_valve.on();
 
                 if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
                     ESP_LOGI(MAIN_LOOP, "Got to upper target position %d, inverting direction", upper_target_position);
                     motor.stop();
-                    motor.set_target_position(lower_target_position);
                     vTaskDelay(1);
                     ESP_LOGI(MAIN_LOOP, "Going to lower target position %d", motor.target_position);
                     motor.set_direction(D_DOWN);
@@ -176,7 +177,7 @@ extern "C" void app_main(void) {
                     ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
                     motor.stop();
                     rel.off();
-                    relay_valve.off();
+                    relay_valve.on();
                     robot_state = S_IDLE;
                 }
             default:
@@ -216,7 +217,7 @@ extern "C" void app_main(void) {
                     ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
 
                     rel.on();
-                    relay_valve.on();
+                    relay_valve.off();
                     motor.set_target_position(upper_target_position);
                     robot_state = S_PAINTING;
                     motor.start();
@@ -225,7 +226,7 @@ extern "C" void app_main(void) {
                 else {
                     ESP_LOGI(MAIN_LOOP, "Step motor stopped at %d steps", motor.double_the_steps / 2);
                     rel.off();
-                    relay_valve.off();
+                    relay_valve.on();
                     motor.stop();
                 }
                 break;

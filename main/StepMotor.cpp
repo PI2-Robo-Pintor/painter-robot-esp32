@@ -45,7 +45,7 @@ void StepMotor::gptimer_init() {
     ESP_ERROR_CHECK(gptimer_enable(step_timer));
     ESP_LOGI(tag, "Enabled step timer");
 
-    initial_delay                           = 900;
+    initial_delay                           = 300;
     target_delay                            = 200;
     alarm_config.alarm_count                = initial_delay;
     alarm_config.reload_count               = 0;
@@ -119,7 +119,7 @@ void StepMotor::control_loop(void* args) {
 }
 
 void StepMotor::set_target_position(int pos) {
-    target_position = pos;
+    this->target_position = pos;
 }
 
 bool StepMotor::go_to(int target_pos) {
@@ -142,21 +142,31 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
     BaseType_t high_task_awoken = pdFALSE;
     StepMotor* motor            = (StepMotor*)user_data;
 
-    int current_position = motor->double_the_steps / 2;
-    if (current_position == motor->target_position) {
-        EventCommand event = event_command_reset();
-        event.type         = T_EVENT;
-        event.event.type   = E_REACHED_TARGET_POSITION;
-        xQueueSendFromISR(mainQueue, &event, NULL);
-    }
+    // int current_position = motor->double_the_steps / 2;
+    // if (current_position == motor->target_position) {
+    //     EventCommand event = event_command_reset();
+    //     event = event_command_reset();
+    //     event.type         = T_EVENT;
+    //     event.event.type   = E_REACHED_TARGET_POSITION;
+    //     event.pointer       = (void*)motor;
+    //     xQueueSendFromISR(mainQueue, &event, NULL);
+    // }
 
-    const int upper_paintable_limit = 350'000;
-    if (motor->double_the_steps + 1 == upper_paintable_limit) {
+    const int upper_paintable_limit = 82'400;
+    if (motor->double_the_steps + 1 == upper_paintable_limit && motor->dir_state == UP) {
         EventCommand event = event_command_reset();
         event.type         = T_EVENT;
         event.event.type   = E_REACHED_UPPER_LIMIT;
         // FIXME: deveria ter prioridade máxima
         xQueueSendFromISR(mainQueue, &event, NULL);
+        gpio_set_level(motor->pin_direction, LOW);
+        motor->dir_state = D_DOWN;
+        motor->double_the_steps = upper_paintable_limit;
+    } else if (motor->double_the_steps -1 == 0 && motor->dir_state == D_DOWN) {
+        motor->stop();
+        motor->double_the_steps = 0;
+        motor->dir_state = D_UP;
+        gpio_set_level(motor->pin_direction, HIGH);
     }
 
     if (motor->dir_state == UP) {
