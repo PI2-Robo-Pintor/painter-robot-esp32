@@ -150,7 +150,6 @@ extern "C" void app_main(void) {
                 ESP_LOGI(MAIN_LOOP, "E_REACHED UPPER LIMIT: %d 2*passos", motor.double_the_steps / 2);
                 break;
             case E_REACHED_TARGET_POSITION:
-                motor.stop();
                 ESP_LOGI(MAIN_LOOP, "E_REACHED TARGET POSITION: %d passos", motor.double_the_steps / 2);
 
                 if (robot_state == S_GETTING_READY) {
@@ -162,6 +161,20 @@ extern "C" void app_main(void) {
                 }
 
                 // TODO: if is_painting => rel.off(); relay_valve.off();
+
+                if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
+                    motor.stop();
+                    motor.set_direction(D_DOWN);
+                    motor.set_target_position(lower_target_position);
+                    motor.start();
+                }
+
+                if (robot_state == S_PAINTING && motor.dir_state == D_DOWN) {
+                    motor.stop();
+                    rel.off();
+                    relay_valve.off();
+                    robot_state = S_IDLE;
+                }
             default:
                 break;
             }
@@ -189,6 +202,7 @@ extern "C" void app_main(void) {
                 break;
 
             case T_CONFIRM_HEIGHTS:
+                ESP_LOGI(MAIN_LOOP, "CONFIRM heightS: %d cm, %d cm", lower_target_position, upper_target_position);
                 motor.go_to(lower_target_position);
                 robot_state = S_GETTING_READY;
                 break;
@@ -197,16 +211,18 @@ extern "C" void app_main(void) {
                 if (command.value == ON) {
                     ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
 
-                    motor.start();
                     rel.on();
                     relay_valve.on();
+                    motor.set_target_position(upper_target_position);
+                    robot_state = S_PAINTING;
+                    motor.start();
                 }
                 // OFF
                 else {
                     ESP_LOGI(MAIN_LOOP, "Step motor stopped at %d steps", motor.double_the_steps / 2);
-                    motor.stop();
                     rel.off();
                     relay_valve.off();
+                    motor.stop();
                 }
                 break;
 

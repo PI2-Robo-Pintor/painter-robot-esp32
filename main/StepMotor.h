@@ -43,8 +43,9 @@ public:
     void stop();
     void set_delay(int speed);
     void set_direction(MotorDirection dir);
-    void set_target_position(int steps);
-    void go_to(int target_steps);
+    void set_target_position(int pos);
+    // Retorna true se já está lá
+    bool go_to(int target_steps);
 
     static const char* tag;
     bool step_state          = 0;

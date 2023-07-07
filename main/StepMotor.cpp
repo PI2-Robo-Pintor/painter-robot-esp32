@@ -118,20 +118,16 @@ void StepMotor::control_loop(void* args) {
     }
 }
 
-// void StepMotor::set_lower_target_position(int pos) {
-//     lower_limit_position = pos;
-// }
+void StepMotor::set_target_position(int pos) {
+    target_position = pos;
+}
 
-// void StepMotor::set_upper_target_position(int pos) {
-//     upper_limit_position = pos;
-// }
-
-void StepMotor::go_to(int target_pos) {
+bool StepMotor::go_to(int target_pos) {
     int current_position  = double_the_steps / 2;
     this->target_position = target_pos;
 
     if (target_pos == current_position)
-        return;
+        return true;
 
     if (target_pos < current_position) {
         set_direction(D_DOWN);
@@ -139,6 +135,7 @@ void StepMotor::go_to(int target_pos) {
         set_direction(D_UP);
 
     start();
+    return false;
 }
 
 bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_data) {
