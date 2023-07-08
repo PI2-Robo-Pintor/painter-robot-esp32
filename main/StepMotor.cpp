@@ -1,4 +1,5 @@
 #include "StepMotor.h"
+#include "NvsHandler.h"
 #include <stdlib.h>
 
 const char* StepMotor::tag = "StepMotor";
@@ -162,17 +163,28 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
         gpio_set_level(motor->pin_direction, LOW);
         motor->dir_state = D_DOWN;
         motor->double_the_steps = upper_paintable_limit;
+        writeNVS(int32_t(motor->double_the_steps));
+        readNVS();
     } else if (motor->double_the_steps -1 == 0 && motor->dir_state == D_DOWN) {
         motor->stop();
         motor->double_the_steps = 0;
+        writeNVS(int32_t(motor->double_the_steps));
+        readNVS();
         motor->dir_state = D_UP;
         gpio_set_level(motor->pin_direction, HIGH);
     }
 
     if (motor->dir_state == UP) {
         motor->double_the_steps++;
-    } else
+        writeNVS(int32_t(motor->double_the_steps));
+        readNVS();
+    } 
+    else
+    {
         motor->double_the_steps--;
+        writeNVS(int32_t(motor->double_the_steps));
+        readNVS();
+    }
 
     if (abs(motor->double_the_steps) % 5 == 0) {
         int delta_delay = 1;
