@@ -1,3 +1,7 @@
+#include "NvsHandler.h"
+
+static const char* TAG       = "NvsHandler";
+
 int32_t readNVS()
 {
     ESP_ERROR_CHECK(nvs_flash_init());

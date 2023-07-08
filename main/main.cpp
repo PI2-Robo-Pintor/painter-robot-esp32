@@ -20,13 +20,14 @@
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 
-#include "StepMotor.h"
 #include "data_command_event.h"
 #include "end_stop_sensor.h"
 #include "low_high.h"
 #include "mqtt.h"
+#include "NvsHandler.h"
 #include "queue.h"
 #include "relay.h"
+#include "StepMotor.h"
 
 static const char* TAG       = "PI2-Robo-Pintor";
 static const char* MAIN_LOOP = "Main Loop";
@@ -70,206 +71,215 @@ extern "C" void app_main(void) {
     setupLogLevels();
 
 
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-
-    Mqtt mqtt;
-    StepMotor motor;
-    Relay rel(PIN_RELAY_COMPRESSOR);
-    Relay relay_valve(PIN_RELAY_VALVE);
-
-    mainQueue      = xQueueCreate(10, sizeof(EventCommand));
-    mqttQueue      = xQueueCreate(10, sizeof(AllData));
-    stepMotorQueue = xQueueCreate(10, sizeof(Command));
-    sensorsQueue   = xQueueCreate(10, sizeof(AllData));
-    solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
-    relayQueue     = xQueueCreate(10, sizeof(unsigned char));
-
-    if (!stepMotorQueue || !sensorsQueue || !solenoidQueue || !mainQueue || !mqttQueue || !relayQueue)
-        ESP_LOGE(TAG, "Failed to create Queues");
-    else {
-        motor.queue = stepMotorQueue;
-
-        mqtt.stepMotorQueue = stepMotorQueue;
-        mqtt.sensorsQueue   = sensorsQueue;
-        mqtt.solenoidQueue  = solenoidQueue;
-        mqtt.mainQueue      = mainQueue;
-        rel.queue           = relayQueue;
-        mqtt.relayQueue     = relayQueue; // relay mqtt queue
+    int32_t value = 0;
+    value = readNVS();
+    if(value == 0)
+    {
+        value = 8;
+        writeNVS(value);
     }
 
-    rel.off();
-    relay_valve.on();
+    // ESP_ERROR_CHECK(nvs_flash_init());
+    // ESP_ERROR_CHECK(esp_netif_init());
+    // ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    mqtt.start();
+    // /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+    //  * Read "Establishing Wi-Fi or Ethernet Connection" section in
+    //  * examples/protocols/README.md for more information about this function.
+    //  */
+    // ESP_ERROR_CHECK(example_connect());
 
-    xTaskCreatePinnedToCore(
-        StepMotor::control_loop,
-        "Task de controle do motor",
-        2048,
-        &motor,
-        1,
-        NULL,
-        0);
+    // Mqtt mqtt;
+    // StepMotor motor;
+    // Relay rel(PIN_RELAY_COMPRESSOR);
+    // Relay relay_valve(PIN_RELAY_VALVE);
 
-    BaseType_t result = 0;
+    // mainQueue      = xQueueCreate(10, sizeof(EventCommand));
+    // mqttQueue      = xQueueCreate(10, sizeof(AllData));
+    // stepMotorQueue = xQueueCreate(10, sizeof(Command));
+    // sensorsQueue   = xQueueCreate(10, sizeof(AllData));
+    // solenoidQueue  = xQueueCreate(10, sizeof(unsigned char));
+    // relayQueue     = xQueueCreate(10, sizeof(unsigned char));
 
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    setup_end_stop_sensor();
+    // if (!stepMotorQueue || !sensorsQueue || !solenoidQueue || !mainQueue || !mqttQueue || !relayQueue)
+    //     ESP_LOGE(TAG, "Failed to create Queues");
+    // else {
+    //     motor.queue = stepMotorQueue;
 
-    find_initial_position(&motor);
+    //     mqtt.stepMotorQueue = stepMotorQueue;
+    //     mqtt.sensorsQueue   = sensorsQueue;
+    //     mqtt.solenoidQueue  = solenoidQueue;
+    //     mqtt.mainQueue      = mainQueue;
+    //     rel.queue           = relayQueue;
+    //     mqtt.relayQueue     = relayQueue; // relay mqtt queue
+    // }
 
-    while (true) {
-        EventCommand ec = event_command_reset();
+    // rel.off();
+    // relay_valve.on();
 
-        result = xQueueReceive(mainQueue, &ec, 5);
-        if (result != pdPASS) {
-            // ESP_LOGE(tag, "Erro na fila?");
-            // continue;
-        }
+    // mqtt.start();
 
-        if (ec.type == T_EVENT) {
-            switch (ec.event.type) {
-            case E_JUST_PRESSED_END_STOP_SENSOR:
-                reenable_end_stop_sensor();
-                ESP_LOGI(MAIN_LOOP, "PRESSED");
-                motor.stop();
-                motor.set_direction(D_UP);
-                motor.start();
-                vTaskDelay(500 / portTICK_PERIOD_MS);
-                break;
-            case E_JUST_RELEASED_END_STOP_SENSOR:
-                reenable_end_stop_sensor();
-                motor.stop();
-                ESP_LOGI(MAIN_LOOP, "RELEASED");
-                motor.double_the_steps = 0;
-                break;
-            case E_REACHED_UPPER_LIMIT:
-                motor.stop();
-                ESP_LOGI(MAIN_LOOP, "E_REACHED UPPER LIMIT: %d 2*passos", motor.double_the_steps / 2);
-                motor.set_direction(D_DOWN);
-                motor.start();
-                break;
-            case E_REACHED_TARGET_POSITION:
-                ESP_LOGI(MAIN_LOOP, "E_REACHED TARGET POSITION: %d passos", motor.double_the_steps / 2);
+    // xTaskCreatePinnedToCore(
+    //     StepMotor::control_loop,
+    //     "Task de controle do motor",
+    //     2048,
+    //     &motor,
+    //     1,
+    //     NULL,
+    //     0);
 
-                if (robot_state == S_GETTING_READY) {
-                    AllData data;
-                    data.device      = D_ROBOT;
-                    data.robot.type  = RDT_READY;
-                    data.robot.value = 1;
-                    mqtt.publish(Mqtt::TOPIC_DATA, &data);
-                }
+    // BaseType_t result = 0;
 
-                // TODO: if is_painting => rel.off(); relay_valve.on();
+    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // setup_end_stop_sensor();
 
-                if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
-                    ESP_LOGI(MAIN_LOOP, "Got to upper target position %d, inverting direction", upper_target_position);
-                    motor.stop();
-                    vTaskDelay(1);
-                    ESP_LOGI(MAIN_LOOP, "Going to lower target position %d", motor.target_position);
-                    motor.set_direction(D_DOWN);
-                    motor.start();
-                }
+    // find_initial_position(&motor);
 
-                if (robot_state == S_PAINTING && motor.dir_state == D_DOWN) {
-                    ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
-                    motor.stop();
-                    rel.off();
-                    relay_valve.on();
-                    robot_state = S_IDLE;
-                }
-            default:
-                break;
-            }
-        } else {
-            Command command         = ec.command;
-            int height_cm_no_offset = 0;
+    // while (true) {
+    //     EventCommand ec = event_command_reset();
 
-            switch (command.type) {
-            case T_NONE:
-                break;
-            case T_MAX_HEIGHT:
-                ESP_LOGI(MAIN_LOOP, "Set MAX height: %d cm | no offset %d cm", command.value, height_cm_no_offset);
-                height_cm_no_offset   = command.value - LOWER_HEIGHT_OFFSET_CM;
-                upper_target_position = cm_to_steps(height_cm_no_offset);
-                ESP_LOGI(MAIN_LOOP, "   to position: %d", upper_target_position);
-                // TODO: Tem que fazer um ajuste pra distância de desaceleração
-                break;
+    //     result = xQueueReceive(mainQueue, &ec, 5);
+    //     if (result != pdPASS) {
+    //         // ESP_LOGE(tag, "Erro na fila?");
+    //         // continue;
+    //     }
 
-            case T_MIN_HEIGHT:
-                height_cm_no_offset = command.value - LOWER_HEIGHT_OFFSET_CM;
-                ESP_LOGI(MAIN_LOOP, "Set MIN height: %d cm | no offset %d cm", command.value, height_cm_no_offset);
-                // FIXME: Ainda tem que fazer um ajuste pra distância de aceleração
-                lower_target_position = cm_to_steps(height_cm_no_offset);
-                ESP_LOGI(MAIN_LOOP, "   to position: %d", lower_target_position);
-                break;
+    //     if (ec.type == T_EVENT) {
+    //         switch (ec.event.type) {
+    //         case E_JUST_PRESSED_END_STOP_SENSOR:
+    //             reenable_end_stop_sensor();
+    //             ESP_LOGI(MAIN_LOOP, "PRESSED");
+    //             motor.stop();
+    //             motor.set_direction(D_UP);
+    //             motor.start();
+    //             vTaskDelay(500 / portTICK_PERIOD_MS);
+    //             break;
+    //         case E_JUST_RELEASED_END_STOP_SENSOR:
+    //             reenable_end_stop_sensor();
+    //             motor.stop();
+    //             ESP_LOGI(MAIN_LOOP, "RELEASED");
+    //             motor.double_the_steps = 0;
+    //             break;
+    //         case E_REACHED_UPPER_LIMIT:
+    //             motor.stop();
+    //             ESP_LOGI(MAIN_LOOP, "E_REACHED UPPER LIMIT: %d 2*passos", motor.double_the_steps / 2);
+    //             motor.set_direction(D_DOWN);
+    //             motor.start();
+    //             break;
+    //         case E_REACHED_TARGET_POSITION:
+    //             ESP_LOGI(MAIN_LOOP, "E_REACHED TARGET POSITION: %d passos", motor.double_the_steps / 2);
 
-            case T_CONFIRM_HEIGHTS:
-                ESP_LOGI(MAIN_LOOP, "CONFIRM heightS: %d cm, %d cm", lower_target_position, upper_target_position);
-                motor.go_to(lower_target_position);
-                robot_state = S_GETTING_READY;
-                break;
+    //             if (robot_state == S_GETTING_READY) {
+    //                 AllData data;
+    //                 data.device      = D_ROBOT;
+    //                 data.robot.type  = RDT_READY;
+    //                 data.robot.value = 1;
+    //                 mqtt.publish(Mqtt::TOPIC_DATA, &data);
+    //             }
 
-            case T_ON_OFF:
-                if (command.value == ON) {
-                    ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
+    //             // TODO: if is_painting => rel.off(); relay_valve.on();
 
-                    rel.on();
-                    relay_valve.off();
-                    motor.set_target_position(upper_target_position);
-                    robot_state = S_PAINTING;
-                    motor.start();
-                }
-                // OFF
-                else {
-                    ESP_LOGI(MAIN_LOOP, "Step motor stopped at %d steps", motor.double_the_steps / 2);
-                    rel.off();
-                    relay_valve.on();
-                    motor.stop();
-                }
-                break;
+    //             if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
+    //                 ESP_LOGI(MAIN_LOOP, "Got to upper target position %d, inverting direction", upper_target_position);
+    //                 motor.stop();
+    //                 vTaskDelay(1);
+    //                 ESP_LOGI(MAIN_LOOP, "Going to lower target position %d", motor.target_position);
+    //                 motor.set_direction(D_DOWN);
+    //                 motor.start();
+    //             }
 
-            case T_VELOCITY:
-                motor.set_delay(command.value);
-                break;
+    //             if (robot_state == S_PAINTING && motor.dir_state == D_DOWN) {
+    //                 ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
+    //                 motor.stop();
+    //                 rel.off();
+    //                 relay_valve.on();
+    //                 robot_state = S_IDLE;
+    //             }
+    //         default:
+    //             break;
+    //         }
+    //     } else {
+    //         Command command         = ec.command;
+    //         int height_cm_no_offset = 0;
 
-            case T_INVERT:
-                if (motor.dir_state == D_UP)
-                    motor.set_direction(D_DOWN);
-                else
-                    motor.set_direction(D_UP);
+    //         switch (command.type) {
+    //         case T_NONE:
+    //             break;
+    //         case T_MAX_HEIGHT:
+    //             ESP_LOGI(MAIN_LOOP, "Set MAX height: %d cm | no offset %d cm", command.value, height_cm_no_offset);
+    //             height_cm_no_offset   = command.value - LOWER_HEIGHT_OFFSET_CM;
+    //             upper_target_position = cm_to_steps(height_cm_no_offset);
+    //             ESP_LOGI(MAIN_LOOP, "   to position: %d", upper_target_position);
+    //             // TODO: Tem que fazer um ajuste pra distância de desaceleração
+    //             break;
 
-                ESP_LOGI(MAIN_LOOP, "Step motor inverted to %d", motor.dir_state);
-                motor.set_direction(motor.dir_state);
-                break;
+    //         case T_MIN_HEIGHT:
+    //             height_cm_no_offset = command.value - LOWER_HEIGHT_OFFSET_CM;
+    //             ESP_LOGI(MAIN_LOOP, "Set MIN height: %d cm | no offset %d cm", command.value, height_cm_no_offset);
+    //             // FIXME: Ainda tem que fazer um ajuste pra distância de aceleração
+    //             lower_target_position = cm_to_steps(height_cm_no_offset);
+    //             ESP_LOGI(MAIN_LOOP, "   to position: %d", lower_target_position);
+    //             break;
 
-            default:
-                ESP_LOGW(MAIN_LOOP, "Command not recognized 0x%02X", command.type);
-                break;
-            }
-        }
+    //         case T_CONFIRM_HEIGHTS:
+    //             ESP_LOGI(MAIN_LOOP, "CONFIRM heightS: %d cm, %d cm", lower_target_position, upper_target_position);
+    //             motor.go_to(lower_target_position);
+    //             robot_state = S_GETTING_READY;
+    //             break;
 
-        AllData recv_data;
-        result = xQueueReceive(sensorsQueue, &recv_data, 10);
+    //         case T_ON_OFF:
+    //             if (command.value == ON) {
+    //                 ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
 
-        switch (recv_data.device) {
-        case D_STEP_MOTOR:
-            // mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
-            break;
-        default:
-            break;
-        }
+    //                 rel.on();
+    //                 relay_valve.off();
+    //                 motor.set_target_position(upper_target_position);
+    //                 robot_state = S_PAINTING;
+    //                 motor.start();
+    //             }
+    //             // OFF
+    //             else {
+    //                 ESP_LOGI(MAIN_LOOP, "Step motor stopped at %d steps", motor.double_the_steps / 2);
+    //                 rel.off();
+    //                 relay_valve.on();
+    //                 motor.stop();
+    //             }
+    //             break;
 
-        vTaskDelay(2 / portTICK_PERIOD_MS);
-    }
+    //         case T_VELOCITY:
+    //             motor.set_delay(command.value);
+    //             break;
+
+    //         case T_INVERT:
+    //             if (motor.dir_state == D_UP)
+    //                 motor.set_direction(D_DOWN);
+    //             else
+    //                 motor.set_direction(D_UP);
+
+    //             ESP_LOGI(MAIN_LOOP, "Step motor inverted to %d", motor.dir_state);
+    //             motor.set_direction(motor.dir_state);
+    //             break;
+
+    //         default:
+    //             ESP_LOGW(MAIN_LOOP, "Command not recognized 0x%02X", command.type);
+    //             break;
+    //         }
+    //     }
+
+    //     AllData recv_data;
+    //     result = xQueueReceive(sensorsQueue, &recv_data, 10);
+
+    //     switch (recv_data.device) {
+    //     case D_STEP_MOTOR:
+    //         // mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
+    //         break;
+    //     default:
+    //         break;
+    //     }
+
+    //     vTaskDelay(2 / portTICK_PERIOD_MS);
+    // }
 }
 
 // 348'400
