@@ -6,5 +6,6 @@ idf_component_register(
         "main.cpp"
         "relay.cpp"
         "end_stop_sensor.cpp"
+        "NvsHandler.cpp"
     INCLUDE_DIRS 
         ".")

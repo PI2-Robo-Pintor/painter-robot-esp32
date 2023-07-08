@@ -4,17 +4,17 @@ int32_t readNVS()
 
     nvs_handle partitionHandler;
 
-    esp_err_t openResponse = nvs_open("WifiStorage",NVS_READONLY,&partitionHandler);
+    esp_err_t openResponse = nvs_open("StepState",NVS_READONLY,&partitionHandler);
 
     if(openResponse == ESP_ERR_NVS_NOT_FOUND)
     {
-        ESP_LOGE(TAG,"Namespace: WifiStorage not found");
+        ESP_LOGE(TAG,"Namespace: StepState not found");
         return -1;
     }
 
     int32_t value;
 
-    esp_err_t response = nvs_get_i32(partitionHandler,"testNum",&value);
+    esp_err_t response = nvs_get_i32(partitionHandler,"NumberSteps",&value);
 
     switch (response)
     {
@@ -43,15 +43,15 @@ void writeNVS(int32_t value)
 
     nvs_handle partitionHandler;
 
-    esp_err_t openResponse = nvs_open("WifiStorage",NVS_READWRITE,&partitionHandler);
+    esp_err_t openResponse = nvs_open("StepState",NVS_READWRITE,&partitionHandler);
 
     if(openResponse == ESP_ERR_NVS_NOT_FOUND)
     {
-        ESP_LOGE(TAG,"Namespace: WifiStorage not found");
+        ESP_LOGE(TAG,"Namespace: StepState not found");
 
     }
 
-    esp_err_t response = nvs_set_i32(partitionHandler,"testNum",value + 1);
+    esp_err_t response = nvs_set_i32(partitionHandler,"NumberSteps",value);
 
     if(response != ESP_OK)
     {
