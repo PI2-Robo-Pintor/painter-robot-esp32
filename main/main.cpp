@@ -276,7 +276,7 @@ extern "C" void app_main(void) {
 
         switch (recv_data.device) {
         case D_STEP_MOTOR:
-            // mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
+            mqtt.publish(Mqtt::TOPIC_DATA, &recv_data);
             break;
         default:
             break;

@@ -107,13 +107,13 @@ void StepMotor::control_loop(void* args) {
             // continue;
         }
 
+        // FIXME: tentar enviar toda alteração de altura(cm a cm) e reduzir spam da mesma altura
         AllData data = {
             .device     = D_STEP_MOTOR,
             .step_motor = {
                 .type  = SMDT_POSITION,
-                .value = motor->double_the_steps,
+                .value = motor->double_the_steps / 800 + 45,
             }};
-
         xQueueSend(sensorsQueue, &data, 1);
     }
 }
