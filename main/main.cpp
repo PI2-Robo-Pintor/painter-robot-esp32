@@ -172,16 +172,12 @@ extern "C" void app_main(void) {
 
                 if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
                     ESP_LOGI(MAIN_LOOP, "Got to upper target position %d, inverting direction", upper_target_position);
-                    motor.stop();
-                    vTaskDelay(1);
                     ESP_LOGI(MAIN_LOOP, "Going to lower target position %d", motor.target_position);
                     motor.set_direction(D_DOWN);
                     motor.start();
-                }
-
-                if (robot_state == S_PAINTING && motor.dir_state == D_DOWN) {
+                } else if (robot_state == S_PAINTING && motor.dir_state == D_DOWN ) {
                     ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
-                    motor.stop();
+                    motor.set_direction(D_UP);
                     rel.off();
                     relay_valve.on();
                     robot_state = S_IDLE;
