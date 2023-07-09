@@ -24,9 +24,9 @@ static bool IRAM_ATTR end_stop_reader_handler(gptimer_handle_t timer, const gpti
     event.type         = T_EVENT;
     int level          = gpio_get_level(PIN_END_STOP);
     if (level == HIGH)
-        event.event.type = E_JUST_RELEASED_END_STOP_SENSOR;
-    else
         event.event.type = E_JUST_PRESSED_END_STOP_SENSOR;
+    else
+        event.event.type = E_JUST_RELEASED_END_STOP_SENSOR;
 
     xQueueSendFromISR(mainQueue, &event, NULL);
 

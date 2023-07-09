@@ -105,8 +105,8 @@ extern "C" void app_main(void) {
         mqtt.relayQueue     = relayQueue; // relay mqtt queue
     }
 
-    rel.off();
-    relay_valve.on();
+    rel.on();
+    // relay_valve.off();
 
     mqtt.start();
 
@@ -178,8 +178,8 @@ extern "C" void app_main(void) {
                 } else if (robot_state == S_PAINTING && motor.dir_state == D_DOWN ) {
                     ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
                     motor.set_direction(D_UP);
-                    rel.off();
-                    relay_valve.on();
+                    rel.on();
+                    // relay_valve.off();
                     robot_state = S_IDLE;
                 }
             default:
@@ -218,8 +218,9 @@ extern "C" void app_main(void) {
                 if (command.value == ON) {
                     ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
 
-                    rel.on();
-                    relay_valve.off();
+                    rel.off();
+                    vTaskDelay(2000 / portTICK_PERIOD_MS);
+                    // relay_valve.on();
                     motor.set_target_position(upper_target_position);
                     robot_state = S_PAINTING;
                     motor.start();
@@ -227,8 +228,8 @@ extern "C" void app_main(void) {
                 // OFF
                 else {
                     ESP_LOGI(MAIN_LOOP, "Step motor stopped at %d steps", motor.double_the_steps / 2);
-                    rel.off();
-                    relay_valve.on();
+                    rel.on();
+                    // relay_valve.off();
                     motor.stop();
                 }
                 break;
