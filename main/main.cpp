@@ -194,6 +194,7 @@ extern "C" void app_main(void) {
         } else {
             Command command         = ec.command;
             int height_cm_no_offset = 0;
+            bool alreadyInPosition;
 
             switch (command.type) {
             case T_NONE:
@@ -216,8 +217,15 @@ extern "C" void app_main(void) {
 
             case T_CONFIRM_HEIGHTS:
                 ESP_LOGI(MAIN_LOOP, "CONFIRM heightS: %d cm, %d cm", lower_target_position, upper_target_position);
-                motor.go_to(lower_target_position);
                 robot_state = S_GETTING_READY;
+                alreadyInPosition = motor.go_to(lower_target_position);
+                if (alreadyInPosition) {
+                    AllData data;
+                    data.device      = D_ROBOT;
+                    data.robot.type  = RDT_READY;
+                    data.robot.value = 1;
+                    mqtt.publish(Mqtt::TOPIC_DATA, &data);
+                }
                 break;
 
             case T_ON_OFF:
