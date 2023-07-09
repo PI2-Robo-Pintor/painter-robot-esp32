@@ -152,7 +152,6 @@ extern "C" void app_main(void) {
                 motor.double_the_steps = 0;
                 break;
             case E_REACHED_UPPER_LIMIT:
-                motor.stop();
                 ESP_LOGI(MAIN_LOOP, "E_REACHED UPPER LIMIT: %d 2*passos", motor.double_the_steps / 2);
                 motor.set_direction(D_DOWN);
                 motor.start();
@@ -172,11 +171,18 @@ extern "C" void app_main(void) {
 
                 if (robot_state == S_PAINTING && motor.dir_state == D_UP) {
                     ESP_LOGI(MAIN_LOOP, "Got to upper target position %d, inverting direction", upper_target_position);
+                    motor.set_target_position(lower_target_position);
                     ESP_LOGI(MAIN_LOOP, "Going to lower target position %d", motor.target_position);
                     motor.set_direction(D_DOWN);
                     motor.start();
                 } else if (robot_state == S_PAINTING && motor.dir_state == D_DOWN ) {
-                    ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, lower_target_position);
+                    AllData data;
+                    data.device      = D_ROBOT;
+                    data.robot.type  = RDT_DONE;
+                    mqtt.publish(Mqtt::TOPIC_DATA, &data);
+
+                    ESP_LOGI(MAIN_LOOP, "Got to lower target position %d %d, stopping", motor.double_the_steps / 2, motor.target_position);
+                    motor.set_target_position(upper_target_position);
                     motor.set_direction(D_UP);
                     rel.on();
                     // relay_valve.off();
@@ -216,14 +222,17 @@ extern "C" void app_main(void) {
 
             case T_ON_OFF:
                 if (command.value == ON) {
+                    reenable_end_stop_sensor();
                     ESP_LOGI(MAIN_LOOP, "Step motor started at %d steps", motor.double_the_steps / 2);
 
                     rel.off();
-                    vTaskDelay(2000 / portTICK_PERIOD_MS);
                     // relay_valve.on();
                     motor.set_target_position(upper_target_position);
                     robot_state = S_PAINTING;
+                    vTaskDelay(6000 / portTICK_PERIOD_MS);
                     motor.start();
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    xQueueReset(mainQueue);
                 }
                 // OFF
                 else {
@@ -245,7 +254,7 @@ extern "C" void app_main(void) {
                     motor.set_direction(D_UP);
 
                 ESP_LOGI(MAIN_LOOP, "Step motor inverted to %d", motor.dir_state);
-                motor.set_direction(motor.dir_state);
+                // motor.set_direction(motor.dir_state);
                 break;
 
             default:
@@ -286,20 +295,22 @@ void find_initial_position(void* args) {
 
     bool pressed_end_stop  = false;
     bool released_end_stop = false;
-
+    ESP_LOGI(tag, "%d", gpio_get_level(PIN_END_STOP));
+    motor->set_target_position(upper_target_position);
     // Se sensor já estiver pressionado
     if (gpio_get_level(PIN_END_STOP) == LOW) {
+        motor->set_direction(D_DOWN);
+        motor->set_delay(500);
+        motor->start();
+    } else {
         pressed_end_stop = true;
         motor->set_direction(D_UP);
-        motor->start();
         motor->set_delay(500);
-    } else {
-        motor->set_direction(D_DOWN);
         motor->start();
-        motor->set_delay(500);
     }
 
     while (true) {
+        ESP_LOGI(tag, "Waiting for event");
         EventCommand event_command = event_command_reset();
         xQueueReceive(mainQueue, &event_command, portMAX_DELAY);
 

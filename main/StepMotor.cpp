@@ -143,18 +143,20 @@ bool StepMotor::incomplete_step(gptimer_handle_t timer, const gptimer_alarm_even
     StepMotor* motor = (StepMotor*)user_data;
 
     int current_position = motor->double_the_steps / 2;
-    
+
     if (current_position == motor->target_position) {
+        if (current_position == 0) motor->double_the_steps++;
         motor->stop();
-        
+
         EventCommand event = event_command_reset();
         event.type         = T_EVENT;
         event.event.type   = E_REACHED_TARGET_POSITION;
         xQueueSendFromISR(mainQueue, &event, NULL);
     }
 
-    const int upper_paintable_limit = 350'000;
-    if (motor->double_the_steps + 1 == upper_paintable_limit) {
+    const int upper_paintable_limit = 40'500;
+    if (motor->double_the_steps / 2 + 1 == upper_paintable_limit) {
+        motor->stop();
         EventCommand event = event_command_reset();
         event.type         = T_EVENT;
         event.event.type   = E_REACHED_UPPER_LIMIT;

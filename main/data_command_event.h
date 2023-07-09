@@ -90,6 +90,7 @@ typedef enum {
     RDT_COMPRESSOR = 0xB1,
     RDT_MOTOR      = 0xB2,
     RDT_READY      = 0xB3,
+    RDT_DONE       = 0xB4,
 } RobotDataType;
 
 typedef struct {
