@@ -160,6 +160,8 @@ extern "C" void app_main(void) {
                 ESP_LOGI(MAIN_LOOP, "E_REACHED TARGET POSITION: %d passos", motor.double_the_steps / 2);
 
                 if (robot_state == S_GETTING_READY) {
+                    motor.set_target_position(upper_target_position);
+                    motor.set_direction(D_UP);
                     AllData data;
                     data.device      = D_ROBOT;
                     data.robot.type  = RDT_READY;
